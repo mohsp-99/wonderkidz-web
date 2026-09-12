@@ -286,7 +286,7 @@ def detail(request, code, slug=None):
         "itemCondition": "https://schema.org/NewCondition" if listing.condition == "new" else "https://schema.org/UsedCondition",
         "offers": {
             "@type": "Offer",
-            "price": listing.price,
+            "price": (listing.price or 0) * 10,  # stored in toman; schema.org wants the currency unit (rial)
             "priceCurrency": "IRR",
             "availability": "https://schema.org/InStock" if listing.is_live else "https://schema.org/SoldOut",
             "url": request.build_absolute_uri(listing.get_absolute_url()),

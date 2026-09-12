@@ -86,7 +86,7 @@ def submit_listing(listing):
 
 
 def expire_listings():
-    """Move live listings past their expiry date to EXPIRED. Returns the count."""
-    return Listing.objects.filter(status=Listing.Status.LIVE, expires_at__lt=timezone.now()).update(
-        status=Listing.Status.EXPIRED
-    )
+    """Move live listings past their expiry date to EXPIRED and clear lapsed promotions. Returns the count."""
+    now = timezone.now()
+    Listing.objects.filter(is_promoted=True, promoted_until__lt=now).update(is_promoted=False, promoted_until=None)
+    return Listing.objects.filter(status=Listing.Status.LIVE, expires_at__lt=now).update(status=Listing.Status.EXPIRED)

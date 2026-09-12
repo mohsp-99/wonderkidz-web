@@ -7,3 +7,4 @@ media/
 staticfiles/
 __pycache__/
 *.pyc
+.run/

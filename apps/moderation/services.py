@@ -171,17 +171,20 @@ def panel_stats():
 
 
 def checklist_for(listing):
-    """Derive the operator checklist from auto flags. Returns list of (icon, label)."""
+    """Derive the operator checklist from auto flags (codes emitted by apps.listings.services.run_auto_checks).
+    Returns list of (icon, label)."""
     codes = {f.get("code") for f in (listing.auto_flags or [])}
-    child = "child_photo" in codes
+    child = "child_photo" in codes  # reserved for a future image classifier; today a human eye decides
+    few = "single_image" in codes
     return [
-        ("✅" if "category" not in codes else "❌", "عنوان و دسته درست است"),
-        ("✅" if "price" not in codes else "❌", "قیمت منطقی است"),
+        ("✅" if "banned_item" not in codes else "❌", "عنوان و دسته درست است"),
+        ("✅" if "price_outlier" not in codes else "❌", "قیمت منطقی است"),
         ("❌" if child else "⚠️", "عکس کودک ندارد" if child else "عکس کودک ندارد (بررسی چشمی)"),
-        ("✅" if "prohibited" not in codes else "❌", "کالای ممنوعه نیست"),
-        ("✅" if "contact" not in codes else "❌", "شماره/لینک در متن ندارد"),
-        ("✅" if listing.hygiene_note.strip() and "hygiene" not in codes else "❌", "یادداشت بهداشتی پر است"),
-        ("⚠️" if "few_images" in codes else "✅", "فقط یک عکس دارد" if "few_images" in codes else "تعداد عکس کافی است"),
+        ("✅" if "banned_item" not in codes else "❌", "کالای ممنوعه نیست"),
+        ("✅" if "contact_in_text" not in codes else "❌", "شماره/لینک در متن ندارد"),
+        ("✅" if listing.hygiene_note.strip() and "hygiene_missing" not in codes else "❌", "یادداشت بهداشتی پر است"),
+        ("⚠️" if few else "✅", "فقط یک عکس دارد" if few else "تعداد عکس کافی است"),
+        ("⚠️" if "new_account" in codes else "✅", "حساب تازه، اولین آگهی" if "new_account" in codes else "فروشندهٔ شناخته‌شده"),
     ]
 
 

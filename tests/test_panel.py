@@ -35,7 +35,7 @@ class QueueTests(TestCase):
         self.cat = make_category()
         self.pending = make_listing(owner=self.seller, status=Listing.Status.DRAFT, title="ماشین شارژی برقی کودک", category=self.cat, district=self.district)
         add_image(self.pending)
-        self.pending.auto_flags = [{"code": "price", "level": "warn", "text": "قیمت بسیار پایین‌تر از میانگین دسته"}]
+        self.pending.auto_flags = [{"code": "price_outlier", "level": "warn", "text": "قیمت بسیار پایین‌تر از میانگین دسته"}]
         self.pending.submit()
 
     def test_queue_lists_pending_with_flags(self):
