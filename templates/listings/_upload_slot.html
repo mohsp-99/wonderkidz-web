@@ -1,0 +1,5 @@
+<div class="up-slot filled" id="img-{{ img.pk }}">
+  <span class="ph {{ listing.ph_class }} has-img"><img src="{{ img.thumb_url }}" alt=""></span>
+  {% if is_cover %}<span class="cover-tag">عکس اصلی</span>{% endif %}
+  <button class="btn btn-danger btn-sm rm" type="button" hx-post="{% url 'listings:delete_image' img.pk %}" hx-target="#img-{{ img.pk }}" hx-swap="outerHTML" hx-confirm="این عکس حذف شود؟" title="حذف">✕</button>
+</div>

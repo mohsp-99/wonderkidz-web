@@ -1,0 +1,15 @@
+<div class="phone-reveal is-on" id="phonebox">
+  {% if denied %}
+    <div class="hint" style="margin:0">فروشنده نمایش شماره را غیرفعال کرده است. از طریق چت پیام بدهید.</div>
+  {% elif limited %}
+    <div class="hint" style="margin:0;color:var(--red-600)">تعداد نمایش شماره در یک ساعت گذشته بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.</div>
+  {% else %}
+    <div class="hint" style="margin:0 0 4px">شمارهٔ تماس فروشنده</div>
+    <div class="pn num" dir="ltr">{{ listing.owner.phone|phone }}</div>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button class="btn btn-soft btn-sm" style="flex:1" type="button" data-copy="{{ listing.owner.phone }}">کپی شماره</button>
+      <a class="btn btn-soft btn-sm" style="flex:1" href="tel:{{ listing.owner.phone }}">تماس</a>
+    </div>
+    <div class="hint" style="margin-top:8px">نمایش شماره برای فروشنده ثبت شد. پیش از دیدن کالا هیچ مبلغی واریز نکنید.</div>
+  {% endif %}
+</div>

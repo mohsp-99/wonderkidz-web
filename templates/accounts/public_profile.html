@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}آگهی‌های {{ seller.name }} | وندرکیدز{% endblock %}
+{% block meta_description %}همهٔ آگهی‌های فعال {{ seller.name }} در وندرکیدز.{% endblock %}
+{% block content %}
+<div class="wrap">
+  <nav class="crumb">
+    <a href="{% url 'listings:home' %}">خانه</a><span class="sepc">›</span>
+    <a href="{% url 'listings:search' %}">آگهی‌ها</a><span class="sepc">›</span>
+    <span>{{ seller.name }}</span>
+  </nav>
+
+  <div class="pf-head">
+    <div class="avatar{% if seller.is_official %} official{% endif %}" aria-hidden="true">{% if seller.is_official %}✦{% else %}{{ seller.initial }}{% endif %}</div>
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <b style="font-size:16px">{{ seller.name }}</b>
+        {% if seller.is_official %}<span class="badge badge-official">✦ فروشگاه رسمی</span>
+        {% elif seller.is_pro %}<span class="badge badge-verified">✓ فروشندهٔ حرفه‌ای</span>{% endif %}
+        {% if seller.is_verified %}<span class="badge badge-verified">✓ شمارهٔ تأییدشده</span>{% endif %}
+      </div>
+      <div class="hint" style="margin:2px 0 0">
+        {% if seller.is_official %}حساب رسمی پلتفرم · {% endif %}عضو از {{ seller.date_joined|jmonth }}{% if seller.district %} · {{ seller.district.name }}{% endif %}
+      </div>
+    </div>
+    <div class="pf-stats">
+      <div><b class="num">{{ active_count|fa }}</b><span>آگهی فعال</span></div>
+      <div><b class="num">{{ sold_count|fa }}</b><span>فروش موفق</span></div>
+    </div>
+  </div>
+
+  <section class="sec">
+    <div class="sec-head">
+      <div><h2>آگهی‌های فعال این فروشنده</h2><div class="sec-sub">{{ active_count|fa }} آگهی</div></div>
+    </div>
+    {% if listings %}
+    <div class="grid-cards">
+      {% for listing in listings %}{% include "partials/card.html" with listing=listing %}{% endfor %}
+    </div>
+    {% else %}
+    <div class="empty" style="padding:30px 16px;text-align:center"><span class="e-icon" aria-hidden="true">🧸</span>این فروشنده فعلاً آگهی فعالی ندارد.</div>
+    {% endif %}
+  </section>
+
+  <div class="notice notice-info" style="margin:22px 0">
+    <span class="ni" aria-hidden="true">🛡️</span>
+    <div><b>وندرکیدز واسطهٔ معامله نیست.</b> پرداخت و تحویل بین خریدار و فروشنده انجام می‌شود. قبل از دیدن کالا هیچ مبلغی — حتی بیعانه — واریز نکنید.</div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "panel/base_panel.html" %}
+{% block panel_title %}{{ u.name }}{% endblock %}
+{% block panel %}
+<div class="pf-head">
+  <div class="avatar{% if u.is_official %} official{% endif %}" aria-hidden="true">{{ u.initial }}</div>
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <b style="font-size:16px">{{ u.name }}</b>
+      {% if u.is_verified %}<span class="badge badge-verified">✓ شمارهٔ تأییدشده</span>{% endif %}
+      {% if u.is_banned %}<span class="badge badge-sold">مسدود</span>{% endif %}
+      {% if u.is_staff %}<span class="badge badge-official">اپراتور</span>{% endif %}
+      <span class="badge badge-soon">{{ u.get_account_type_display }}</span>
+    </div>
+    <div class="hint" style="margin:2px 0 0">
+      <span class="num" dir="ltr">{{ u.phone|phone }}</span> · عضو از {{ u.date_joined|jmonth }}{% if u.district %} · {{ u.district.name }}{% endif %} · سقف آگهی: <b class="num">{{ u.listing_cap|fa }}</b>
+      {% if u.ban_reason %}<br>دلیل مسدودی: {{ u.ban_reason }}{% endif %}
+    </div>
+  </div>
+  <div class="pf-stats">
+    <div><b class="num">{{ listings|length|fa }}</b><span>آگهی</span></div>
+    <div><b class="num">{{ u.sold_count|fa }}</b><span>فروخته‌شده</span></div>
+    <div><b class="num">{{ convs|fa }}</b><span>گفت‌وگو</span></div>
+    <div><b class="num">{{ reveals|fa }}</b><span>نمایش شماره</span></div>
+    <div><b class="num">{{ u.warnings_count|fa }}</b><span>اخطار</span></div>
+  </div>
+  <form method="post" action="{% url 'panel:ban_user' u.pk %}" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+    {% csrf_token %}
+    {% if not u.is_banned %}<input class="input" name="reason" placeholder="دلیل مسدودی" style="width:200px">{% endif %}
+    <button class="btn {% if u.is_banned %}btn-soft{% else %}btn-danger{% endif %} btn-sm" type="submit" {% if not u.is_banned %}onclick="return confirm('حساب مسدود و آگهی‌های فعالش برداشته شود؟')"{% endif %}>{% if u.is_banned %}رفع مسدودی{% else %}مسدودسازی{% endif %}</button>
+    <a class="btn btn-ghost btn-sm" href="/admin/accounts/user/{{ u.pk }}/change/">ویرایش در ادمین</a>
+  </form>
+</div>
+
+<div class="panel panel-pad" style="margin-top:14px">
+  <h2 style="font-size:16px;margin-bottom:8px">آگهی‌های این کاربر</h2>
+  {% for l in listings %}
+  <div class="ml-row">
+    <div class="ml-thumb">{% with cover=l.cover %}<span class="ph {{ l.ph_class }}{% if cover %} has-img{% endif %}">{% if cover %}<img src="{{ cover.thumb_url }}" alt="">{% else %}<span aria-hidden="true">{{ l.emoji }}</span>{% endif %}</span>{% endwith %}</div>
+    <div class="ml-body">
+      <div class="ml-title"><a href="{{ l.get_absolute_url }}" target="_blank" rel="noopener">{{ l.title }}</a></div>
+      <div class="ml-meta">
+        <span class="badge {% if l.status == 'live' %}badge-live{% elif l.status == 'pending' %}badge-pending{% elif l.status == 'sold' or l.status == 'rejected' or l.status == 'removed' %}badge-sold{% else %}badge-soon{% endif %}">{{ l.get_status_display }}</span>
+        {% if l.price %}<span class="num">{{ l.price|price }} تومان</span>{% endif %}
+        <span>{{ l.category.full_name }}</span><span>{{ l.district.name }}</span>
+        <span class="num">{{ l.views_count|fa }} بازدید</span>
+        <span>{{ l.created_at|ago }}</span>
+        {% if l.reject_reason %}<span style="color:var(--red-600)">رد: {{ l.reject_reason }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="ml-actions" id="tslot-{{ l.pk }}">
+      {% if l.status == 'live' or l.status == 'pending' %}
+      <button class="btn btn-danger btn-sm" type="button" hx-post="{% url 'panel:takedown' l.pk %}" hx-target="#tslot-{{ l.pk }}" hx-confirm="این آگهی حذف شود؟">حذف</button>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}<div class="hint">آگهی‌ای ندارد.</div>{% endfor %}
+</div>
+
+<div class="form-2col" style="margin-top:14px">
+  <div class="panel panel-pad">
+    <h2 style="font-size:16px;margin-bottom:8px">گزارش‌های دربارهٔ این کاربر</h2>
+    {% for r in reports_about %}
+    <div style="padding:8px 0;border-bottom:1px solid var(--line-2);font-size:13px">
+      <b>{{ r.get_reason_display }}</b> — {{ r.target_title }}
+      <div class="hint" style="margin:0">{{ r.reporter.name }} · {{ r.created_at|ago }} · {{ r.get_status_display }}{% if r.resolution %} ({{ r.resolution }}){% endif %}</div>
+    </div>
+    {% empty %}<div class="hint">گزارشی ثبت نشده.</div>{% endfor %}
+  </div>
+  <div class="panel panel-pad">
+    <h2 style="font-size:16px;margin-bottom:8px">تصمیم‌های اپراتور</h2>
+    {% for d in decisions %}
+    <div style="padding:8px 0;border-bottom:1px solid var(--line-2);font-size:13px">
+      <span class="badge {% if d.decision == 'approve' or d.decision == 'dismiss' %}badge-live{% elif d.decision == 'warn' %}badge-pending{% else %}badge-sold{% endif %}">{{ d.get_decision_display }}</span>
+      {{ d.listing_title }}{% if d.reason %} — {{ d.reason }}{% endif %}
+      <div class="hint" style="margin:0">{{ d.operator.name|default:"—" }} · {{ d.created_at|ago }}</div>
+    </div>
+    {% empty %}<div class="hint">تصمیمی ثبت نشده.</div>{% endfor %}
+  </div>
+</div>
+{% endblock %}

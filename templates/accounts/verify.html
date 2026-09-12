@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}کد تأیید | وندرکیدز{% endblock %}
+{% block header %}{% include "accounts/_auth_header.html" %}{% endblock %}
+{% block footer %}{% include "accounts/_auth_footer.html" %}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div style="width:100%;max-width:400px">
+    <div class="authpane is-on" id="pane-otp">
+      <form class="auth-card" method="post" action="{% url 'accounts:verify' %}" autocomplete="off">
+        {% csrf_token %}
+        <div style="text-align:center;margin-bottom:14px">
+          <span class="logo-mark" style="width:52px;height:52px;font-size:26px;border-radius:16px;display:inline-grid" aria-hidden="true">✉️</span>
+        </div>
+        <h1>کد تأیید را وارد کنید</h1>
+        <p class="sub">
+          کد پنج‌رقمی به شمارهٔ <b class="num" id="phone-echo" dir="ltr">{{ phone|phone }}</b> پیامک شد.
+          <a href="{% url 'accounts:login' %}" style="color:var(--teal-700)">تغییر شماره</a>
+        </p>
+
+        <div class="otp-inputs" dir="ltr">
+          <input id="otp-1" class="num" inputmode="numeric" maxlength="1" aria-label="رقم ۱" autocomplete="one-time-code">
+          <input id="otp-2" class="num" inputmode="numeric" maxlength="1" aria-label="رقم ۲">
+          <input id="otp-3" class="num" inputmode="numeric" maxlength="1" aria-label="رقم ۳">
+          <input id="otp-4" class="num" inputmode="numeric" maxlength="1" aria-label="رقم ۴">
+          <input id="otp-5" class="num" inputmode="numeric" maxlength="1" aria-label="رقم ۵">
+        </div>
+        <input type="hidden" id="otp-code" name="code" value="">
+        {% if form.code.errors %}<ul class="errorlist" style="text-align:center">{% for e in form.code.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+
+        <div class="hint" id="otp-timer" data-seconds="{{ OTP_TTL_SECONDS }}" style="text-align:center">ارسال دوبارهٔ کد تا <b class="num"></b> دیگر</div>
+
+        <button class="btn btn-primary btn-lg btn-block" id="otp-submit" type="submit" disabled style="margin-top:14px">ورود</button>
+
+        <div class="auth-foot">
+          کد نیامد؟ ممکن است چند ثانیه طول بکشد. شمارهٔ فرستنده: <b class="num" dir="ltr">۱۰۰۰۸۹۰۸۷۸</b>
+        </div>
+      </form>
+
+      <form method="post" action="{% url 'accounts:resend' %}" class="hint" id="otp-resend" hidden style="text-align:center;margin-top:10px">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-quiet btn-sm" style="color:var(--teal-700);font-weight:600">ارسال دوبارهٔ کد</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

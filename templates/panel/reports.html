@@ -1,0 +1,60 @@
+{% extends "panel/base_panel.html" %}
+{% block panel_title %}گزارش‌های کاربران{% endblock %}
+{% block panel %}
+{% include "panel/_stats_row.html" %}
+<div class="panel" style="margin-top:16px;padding:0;overflow:hidden">
+  <div class="tabs" style="padding:0 8px">
+    <a class="tab{% if status == 'open' %} is-on{% endif %}" href="{% url 'panel:reports' %}?status=open">گزارش‌های باز <span class="cnt num">{{ stats.open_reports|fa }}</span></a>
+    <a class="tab{% if status != 'open' %} is-on{% endif %}" href="{% url 'panel:reports' %}?status=closed">رسیدگی‌شده</a>
+  </div>
+  <div style="padding:16px;background:#f4f6f8">
+    <div class="panel" style="overflow:hidden;padding:0;overflow-x:auto">
+      <table class="adm-table">
+        <thead><tr><th>مورد</th><th>نوع گزارش</th><th>گزارش‌دهنده</th><th>زمان</th><th>اولویت</th><th>اقدام</th></tr></thead>
+        <tbody>
+        {% for row in rows %}{% with r=row.r %}
+          <tr id="rep-{{ r.pk }}">
+            <td>
+              {% if r.listing %}
+                <a href="{{ r.listing.get_absolute_url }}" target="_blank" rel="noopener" style="color:var(--teal-700);font-weight:600">{{ r.listing.title }}</a>
+                <div class="hint" style="margin:0">آگهی · {{ r.listing.district.name }} · <a href="{% url 'panel:user_detail' r.listing.owner_id %}">فروشنده</a></div>
+              {% else %}
+                <a href="{% url 'chat:thread' r.conversation_id %}" target="_blank" rel="noopener"><b>گفت‌وگو #{{ r.conversation_id|fa }}</b></a>
+                <div class="hint" style="margin:0">چت · بین دو کاربر</div>
+              {% endif %}
+            </td>
+            <td>{{ r.get_reason_display }}{% if r.note %}<div class="hint" style="margin:0">«{{ r.note|truncatechars:120 }}»</div>{% endif %}</td>
+            <td class="num">{{ row.same|fa }} کاربر<div class="hint" style="margin:0"><a href="{% url 'panel:user_detail' r.reporter_id %}">{{ r.reporter.name }}</a></div></td>
+            <td class="num">{{ r.created_at|ago }}</td>
+            <td>{% if r.priority == 'urgent' %}<span class="badge badge-repair">فوری</span>{% elif r.priority == 'low' %}<span class="badge badge-soon">کم</span>{% else %}<span class="badge badge-pending">متوسط</span>{% endif %}</td>
+            <td id="rslot-{{ r.pk }}">
+              {% if r.status == 'open' %}
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                {% if r.listing %}
+                <button class="btn btn-danger btn-sm" type="button" hx-post="{% url 'panel:resolve_report' r.pk %}" hx-vals='{"action":"takedown_ban"}' hx-target="#rslot-{{ r.pk }}" hx-confirm="آگهی حذف و حساب فروشنده مسدود شود؟" hx-on::after-request="document.getElementById('rep-{{ r.pk }}').style.opacity='.35'">حذف آگهی + مسدودسازی</button>
+                <button class="btn btn-ghost btn-sm" type="button" hx-post="{% url 'panel:resolve_report' r.pk %}" hx-vals='{"action":"takedown"}' hx-target="#rslot-{{ r.pk }}" hx-on::after-request="document.getElementById('rep-{{ r.pk }}').style.opacity='.35'">حذف آگهی</button>
+                <button class="btn btn-ghost btn-sm" type="button" hx-post="{% url 'panel:resolve_report' r.pk %}" hx-vals='{"action":"warn"}' hx-target="#rslot-{{ r.pk }}" hx-on::after-request="document.getElementById('rep-{{ r.pk }}').style.opacity='.35'">تذکر به فروشنده</button>
+                {% else %}
+                <button class="btn btn-ghost btn-sm" type="button" hx-post="{% url 'panel:resolve_report' r.pk %}" hx-vals='{"action":"warn"}' hx-target="#rslot-{{ r.pk }}" hx-on::after-request="document.getElementById('rep-{{ r.pk }}').style.opacity='.35'">اخطار به کاربر</button>
+                {% endif %}
+                <button class="btn btn-ghost btn-sm" type="button" hx-post="{% url 'panel:resolve_report' r.pk %}" hx-vals='{"action":"dismiss"}' hx-target="#rslot-{{ r.pk }}" hx-on::after-request="document.getElementById('rep-{{ r.pk }}').style.opacity='.35'">بی‌اشکال</button>
+              </div>
+              {% else %}
+                <span class="badge {% if r.status == 'dismissed' %}badge-live{% else %}badge-sold{% endif %}">{{ r.resolution|default:r.get_status_display }}</span>
+                <div class="hint" style="margin:0">{{ r.handled_by.name|default:"—" }} · {{ r.handled_at|ago }}</div>
+              {% endif %}
+            </td>
+          </tr>
+        {% endwith %}{% empty %}
+          <tr><td colspan="6" style="text-align:center;padding:30px" class="hint">گزارشی وجود ندارد.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="notice notice-info" style="margin-top:14px">
+      <span class="ni" aria-hidden="true">📖</span>
+      <div>سیاست پلتفرم: <b>گزارش و مسدودسازی، بدون میانجی‌گری.</b> وندرکیدز در اختلاف مالی بین کاربران وارد نمی‌شود؛ فقط حساب متخلف را محدود می‌کند.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

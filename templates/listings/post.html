@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+{% block title %}{% if listing %}ویرایش آگهی{% else %}ثبت آگهی{% endif %} | وندرکیدز{% endblock %}
+{% block content %}
+<div class="wrap" style="max-width:940px"
+     x-data="postForm(window.WK_CATS, window.WK_DISTS)"
+     x-init="init()">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:20px 0 14px;flex-wrap:wrap">
+    <div>
+      <h1 style="font-size:20px">{% if listing %}ویرایش آگهی{% else %}ثبت آگهی{% endif %}</h1>
+      <div class="sec-sub">ثبت آگهی در وندرکیدز رایگان است.</div>
+    </div>
+    <a class="btn btn-quiet btn-sm" href="{% url 'accounts:profile' %}">انصراف و بازگشت</a>
+  </div>
+
+  {% if form.non_field_errors or image_error %}
+  <div class="notice notice-red" style="margin-bottom:12px"><span class="ni" aria-hidden="true">⛔</span><div>{% for e in form.non_field_errors %}{{ e }}<br>{% endfor %}{% if image_error %}{{ image_error }}{% endif %}</div></div>
+  {% endif %}
+  {% if form.errors %}
+  <div class="notice notice-warn" style="margin-bottom:12px"><span class="ni" aria-hidden="true">✏️</span><div>چند مورد نیاز به اصلاح دارد: {% for field in form %}{% if field.errors %}<b>{{ field.label }}</b> {% endif %}{% endfor %}</div></div>
+  {% endif %}
+
+  <div class="stepper" role="list">
+    <template x-for="(s, i) in steps" :key="i">
+      <div style="display:contents">
+        <div class="st-item" :class="{'is-on': step === i+1, 'is-done': step > i+1}" role="listitem" @click="go(i+1)" style="cursor:pointer"><span class="st-num num" x-text="fa(i+1)"></span><span class="st-lbl" x-text="s"></span></div>
+        <span class="st-line" x-show="i < steps.length-1"></span>
+      </div>
+    </template>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" action="{% if listing %}{% url 'listings:edit' listing.code %}{% else %}{% url 'listings:post' %}{% endif %}" @keydown.enter.prevent="if($event.target.tagName!=='TEXTAREA' && step<6) next()">
+  {% csrf_token %}
+  <div class="panel panel-pad" style="margin-top:14px;padding:22px" data-stepper>
+
+    <!-- STEP 1 — type -->
+    <section class="steppane" :class="{'is-on': step===1}">
+      <h2 style="font-size:17px;margin-bottom:4px">چه نوع آگهی‌ای می‌خواهید ثبت کنید؟</h2>
+      <p class="hint" style="margin-bottom:16px">در این نسخه فقط «فروش» فعال است. بقیهٔ انواع در ساختار داده پیش‌بینی شده‌اند و بعداً فعال می‌شوند.</p>
+      <div class="type-grid">
+        {% for key, label in types %}
+        {% with meta=type_meta|get_item:key %}
+        <label class="type-card{% if key not in enabled_types %} is-soon{% endif %}" :class="{'is-on': type === '{{ key }}'}" {% if key not in enabled_types %}aria-disabled="true"{% endif %}>
+          <input type="radio" name="type" value="{{ key }}" x-model="type" class="sr-only" {% if key not in enabled_types %}disabled{% endif %}>
+          <span class="tc-ic" aria-hidden="true">{{ meta.0 }}</span>
+          <span class="tc-n">{{ label }}</span>
+          <span class="tc-d">{{ meta.1 }}</span>
+          {% if key not in enabled_types %}<span class="badge badge-soon" style="margin-top:6px">به‌زودی</span>{% endif %}
+        </label>
+        {% endwith %}
+        {% endfor %}
+      </div>
+      <div class="notice notice-green" style="margin-top:18px">
+        <span class="ni" aria-hidden="true">✅</span>
+        <div><b>ثبت آگهی رایگان است.</b> در حال حاضر هیچ هزینه‌ای برای فروشنده وجود ندارد؛ نه اشتراک، نه کارمزد فروش.</div>
+      </div>
+      <div class="step-nav"><span></span><button class="btn btn-primary" type="button" @click="next()">ادامه ←</button></div>
+    </section>
+
+    <!-- STEP 2 — category -->
+    <section class="steppane" :class="{'is-on': step===2}">
+      <h2 style="font-size:17px;margin-bottom:4px">اسباب‌بازی در کدام دسته است؟</h2>
+      <p class="hint" style="margin-bottom:14px">دسته‌بندی درست باعث می‌شود آگهی در فیلترها و صفحهٔ دستهٔ مربوطه دیده شود.</p>
+      <div class="field">
+        <input class="input" type="search" x-model="catQuery" placeholder="نام اسباب‌بازی را بنویسید، مثلاً «لگو» یا «سه‌چرخه»…" aria-label="جستجوی دسته">
+        <div class="hint" x-show="catQuery && suggestion()" x-cloak>پیشنهاد بر اساس متن: <b x-text="suggestion() && suggestion().label"></b> <button type="button" class="btn btn-soft btn-sm" @click="pickSuggestion()">انتخاب</button></div>
+      </div>
+      <input type="hidden" name="category" :value="cat || ''">
+      {% if form.category.errors %}<ul class="errorlist">{% for e in form.category.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      <h4 style="font-size:13px;margin:16px 0 8px;color:var(--ink-2)">دستهٔ اصلی</h4>
+      <div class="cat-pick">
+        <template x-for="r in categories" :key="r.id">
+          <button type="button" :class="{'is-on': root === r.id}" @click="pickRoot(r)"><span aria-hidden="true" x-text="r.emoji"></span> <span x-text="r.name"></span></button>
+        </template>
+      </div>
+      <template x-if="rootObj() && rootObj().children.length">
+        <div>
+          <h4 style="font-size:13px;margin:18px 0 8px;color:var(--ink-2)">زیردستهٔ «<span x-text="rootObj().name"></span>»</h4>
+          <div class="cat-pick">
+            <template x-for="c in rootObj().children" :key="c.id">
+              <button type="button" :class="{'is-on': cat === c.id}" @click="cat = c.id" x-text="c.name"></button>
+            </template>
+          </div>
+        </div>
+      </template>
+      <div class="notice notice-warn" style="margin-top:18px">
+        <span class="ni" aria-hidden="true">⛔</span>
+        <div><b>چه چیزهایی در وندرکیدز جا ندارند:</b> لباس کودک، صندلی خودرو، کالای فراخوان‌شده (recall)، اسباب‌بازی شکسته با لبهٔ تیز، و هر کالایی که مربوط به کودک نیست.</div>
+      </div>
+      <div class="step-nav">
+        <button class="btn btn-ghost" type="button" @click="prev()">→ مرحلهٔ قبل</button>
+        <button class="btn btn-primary" type="button" @click="next()">ادامه ←</button>
+      </div>
+    </section>
+
+    <!-- STEP 3 — attributes -->
+    <section class="steppane" :class="{'is-on': step===3}">
+      <h2 style="font-size:17px;margin-bottom:4px">مشخصات اسباب‌بازی</h2>
+      <p class="hint" style="margin-bottom:16px">هرچه دقیق‌تر، سریع‌تر فروش می‌رود. این فیلدها همان چیزی هستند که خریدارها با آن فیلتر می‌کنند.</p>
+
+      <div class="field">
+        <label class="label" for="f-title">عنوان آگهی <span class="req">*</span></label>
+        <input class="input{% if form.title.errors %} is-invalid{% endif %}" id="f-title" name="title" x-model="title" maxlength="90" placeholder="مثلاً: لگو کلاسیک ۵۰۰ قطعه با جعبهٔ اصلی">
+        {{ form.title.errors }}
+        <div class="hint">نام اسباب‌بازی + نکتهٔ مهمش. از نوشتن شمارهٔ تلفن در عنوان خودداری کنید.</div>
+      </div>
+
+      <div class="form-2col">
+        <div class="field">
+          <label class="label" for="f-age">ردهٔ سنی <span class="req">*</span></label>
+          <select class="select{% if form.age_range.errors %} is-invalid{% endif %}" id="f-age" name="age_range" x-model="age">
+            <option value="">انتخاب کنید</option>
+            {% for k, v in ages %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+          </select>
+          {{ form.age_range.errors }}
+        </div>
+        <div class="field">
+          <label class="label" for="f-brand">برند</label>
+          <select class="select" id="f-brand" name="brand" x-model="brand">
+            <option value="">بدون برند / دست‌ساز</option>
+            {% for b in brands %}<option value="{{ b.id }}">{{ b.name }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label">وضعیت کالا <span class="req">*</span></label>
+        <div class="chips-row">
+          {% for k, v in conditions %}
+          <label class="chip" :class="{'is-on': cond === '{{ k }}'}"><input type="radio" name="condition" value="{{ k }}" x-model="cond" class="sr-only"> {{ v }}{% if k == 'new' %} (استفاده‌نشده){% endif %}</label>
+          {% endfor %}
+        </div>
+        {{ form.condition.errors }}
+        <div class="hint">«در حد نو» یعنی کمتر از ۶ ماه استفاده شده و اثر استفاده تقریباً دیده نمی‌شود.</div>
+      </div>
+
+      <div class="field">
+        <label class="label">کامل بودن <span class="req">*</span></label>
+        <label class="check"><input type="checkbox" name="is_complete" x-model="is_complete"> همهٔ قطعات موجود است (شمرده‌ام)</label>
+        <label class="check"><input type="checkbox" name="has_box" x-model="has_box"> جعبهٔ اصلی دارد</label>
+        <label class="check"><input type="checkbox" name="has_manual" x-model="has_manual"> دفترچهٔ راهنما دارد</label>
+        <label class="check"><input type="checkbox" name="has_battery" x-model="has_battery"> باتری یا شارژر همراهش است</label>
+        <label class="check"><input type="checkbox" name="missing_parts" x-model="missing_parts"> چند قطعه کم دارد (در توضیحات بنویسید)</label>
+      </div>
+
+      <div class="field">
+        <label class="label" for="f-hyg">یادداشت بهداشتی <span class="req">*</span></label>
+        <input class="input{% if form.hygiene_note.errors %} is-invalid{% endif %}" id="f-hyg" name="hygiene_note" x-model="hygiene" maxlength="200" placeholder="مثلاً: با آب ولرم و مایع ظرف‌شویی کودک شسته و کاملاً خشک شده است.">
+        {{ form.hygiene_note.errors }}
+        <div class="hint">برای اسباب‌بازی کودک این فیلد اجباری است — خریدارها بیشتر از هر چیزی همین را می‌پرسند.</div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="f-desc">توضیحات <span class="req">*</span></label>
+        <textarea class="textarea{% if form.description.errors %} is-invalid{% endif %}" id="f-desc" name="description" x-model="desc" placeholder="چند ماه استفاده شده؟ چه چیزی کم یا خط‌افتاده است؟ برای چه سنی مناسب است؟"></textarea>
+        {{ form.description.errors }}
+        <div class="hint">شمارهٔ تماس، لینک شبکه‌های اجتماعی و آدرس دقیق منزل در توضیحات مجاز نیست.</div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn btn-ghost" type="button" @click="prev()">→ مرحلهٔ قبل</button>
+        <button class="btn btn-primary" type="button" @click="next()">ادامه ←</button>
+      </div>
+    </section>
+
+    <!-- STEP 4 — photos -->
+    <section class="steppane" :class="{'is-on': step===4}">
+      <h2 style="font-size:17px;margin-bottom:4px">عکس‌ها</h2>
+      <p class="hint" style="margin-bottom:16px">حداقل ۱ و حداکثر {{ max_images|fa }} عکس. اولین عکس، عکس اصلی آگهی می‌شود.</p>
+
+      <div class="notice notice-red" style="margin-bottom:16px">
+        <span class="ni" aria-hidden="true">🚫</span>
+        <div><b>عکس کودکان ممنوع است.</b> در هیچ عکسی نباید صورت یا بدن کودک دیده شود — نه فرزند شما، نه کسی دیگر. آگهی‌هایی که عکس کودک دارند تأیید نمی‌شوند. این قانون برای حفظ حریم خصوصی بچه‌هاست.</div>
+      </div>
+
+      {% if image_error %}<div class="hint" style="color:var(--red-600);margin-bottom:8px">{{ image_error }}</div>{% endif %}
+      <div class="upload-grid" id="upload-grid">
+        {% for img in existing_images %}{% include "listings/_upload_slot.html" with is_cover=forloop.first %}{% endfor %}
+        <template x-for="(p, i) in previews" :key="p.key">
+          <div class="up-slot filled">
+            <img :src="p.url" alt="">
+            <span class="cover-tag" x-show="i === 0 && {{ existing_images|length }} === 0">عکس اصلی</span>
+            <button class="btn btn-danger btn-sm rm" type="button" @click="removeFile(i)" title="حذف">✕</button>
+          </div>
+        </template>
+        <div class="up-slot" x-show="previews.length + {{ existing_images|length }} < {{ max_images }}">
+          <span><span aria-hidden="true" style="font-size:22px;display:block">＋</span>افزودن عکس</span>
+          <input type="file" name="images" accept="image/*" multiple x-ref="files" @change="onFiles($event)">
+        </div>
+      </div>
+      <div class="hint" style="margin-top:8px">عکس‌ها روی سرور فشرده و به WebP تبدیل می‌شوند. اولین عکس، عکس اصلی است.</div>
+
+      <div class="photo-check" style="margin-top:18px">
+        <h4><span aria-hidden="true">📋</span> چک‌لیست عکس وضعیت</h4>
+        <div class="hint" style="margin-bottom:6px">آگهی‌هایی که این چهار عکس را دارند دو برابر سریع‌تر فروش می‌روند.</div>
+        <label class="check"><input type="checkbox"> ۱ — نمای کلی اسباب‌بازی در نور روز، روی زمینهٔ ساده</label>
+        <label class="check"><input type="checkbox"> ۲ — جعبه، برچسب برند و ردهٔ سنی روی آن</label>
+        <label class="check"><input type="checkbox"> ۳ — نزدیکِ هر خط، لک یا شکستگی (اگر هست)</label>
+        <label class="check"><input type="checkbox"> ۴ — همهٔ قطعات کنار هم، برای نشان‌دادن کامل بودن</label>
+        <label class="check"><input type="checkbox"> ۵ — محل باتری و درِ آن (فقط برای اسباب‌بازی باتری‌دار)</label>
+      </div>
+
+      <div class="notice notice-info" style="margin-top:14px">
+        <span class="ni" aria-hidden="true">🤖</span>
+        <div>عکس‌ها پیش از انتشار به‌صورت خودکار بررسی می‌شوند؛ موارد مشکوک به اپراتور ارجاع داده می‌شود.</div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn btn-ghost" type="button" @click="prev()">→ مرحلهٔ قبل</button>
+        <button class="btn btn-primary" type="button" @click="next()">ادامه ←</button>
+      </div>
+    </section>
+
+    <!-- STEP 5 — price & location -->
+    <section class="steppane" :class="{'is-on': step===5}">
+      <h2 style="font-size:17px;margin-bottom:4px">قیمت و محله</h2>
+      <p class="hint" style="margin-bottom:16px">آدرس دقیق هرگز نمایش داده نمی‌شود؛ فقط نام محله روی آگهی دیده می‌شود.</p>
+
+      <div class="form-2col">
+        <div class="field">
+          <label class="label" for="f-price">قیمت پیشنهادی شما <span class="req">*</span></label>
+          <div class="input-suffix">
+            <input class="input num{% if form.price.errors %} is-invalid{% endif %}" id="f-price" name="price" x-model="price" inputmode="numeric" data-numeric placeholder="۱٬۲۵۰٬۰۰۰">
+            <span class="sfx">تومان</span>
+          </div>
+          {{ form.price.errors }}
+        </div>
+        <div class="field">
+          <label class="label" for="f-orig">قیمت نو در بازار (اختیاری)</label>
+          <div class="input-suffix">
+            <input class="input num" id="f-orig" name="original_price" x-model="orig" inputmode="numeric" data-numeric placeholder="۳٬۴۰۰٬۰۰۰">
+            <span class="sfx">تومان</span>
+          </div>
+          <div class="hint" x-show="pctOff()" x-cloak>روی آگهی «<span x-text="fa(pctOff())"></span>٪ ارزان‌تر از نو» نشان داده می‌شود.</div>
+          <div class="hint" x-show="!pctOff()">اگر پرش کنید، روی آگهی «٪ ارزان‌تر از نو» نشان داده می‌شود.</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="check"><input type="checkbox" name="is_negotiable" x-model="negotiable"> قیمت قابل مذاکره است</label>
+      </div>
+
+      <div class="form-2col">
+        <div class="field">
+          <label class="label" for="f-city">شهر <span class="req">*</span></label>
+          <select class="select" id="f-city" name="city" x-model="city" @change="district=''">
+            {% for c in cities %}<option value="{{ c.id }}" {% if not c.is_active %}disabled{% endif %}>{{ c.name }}{% if not c.is_active %} (به‌زودی){% endif %}</option>{% endfor %}
+          </select>
+          {{ form.city.errors }}
+        </div>
+        <div class="field">
+          <label class="label" for="f-dist">محله <span class="req">*</span></label>
+          <select class="select{% if form.district.errors %} is-invalid{% endif %}" id="f-dist" name="district" x-model="district">
+            <option value="">انتخاب کنید</option>
+            <template x-for="d in (districts[String(city)] || [])" :key="d.id"><option :value="String(d.id)" x-text="d.name" :selected="String(d.id)===String(district)"></option></template>
+          </select>
+          {{ form.district.errors }}
+          <div class="hint">فعلاً محله‌های آغازین فعال است.</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="f-meet">محل پیشنهادی تحویل (اختیاری)</label>
+        <input class="input" id="f-meet" name="meetup_hint" x-model="meetup" maxlength="120" placeholder="یک جای عمومی و شلوغ در محله">
+        <div class="hint">جای عمومی پیشنهاد دهید. آدرس منزل ننویسید.</div>
+      </div>
+
+      <div class="field">
+        <label class="label">راه‌های تماس</label>
+        <label class="toggle-row"><span>چت درون‌برنامه‌ای فعال باشد</span><input type="checkbox" name="allow_chat" x-model="allow_chat"><span class="switch"></span></label>
+        <label class="toggle-row"><span>خریدار بتواند شمارهٔ من را ببیند</span><input type="checkbox" name="allow_phone" x-model="allow_phone"><span class="switch"></span></label>
+        {{ form.allow_chat.errors }}
+        <div class="hint">شمارهٔ شما فقط بعد از کلیک روی «اطلاعات تماس» و پس از ورود خریدار نمایش داده می‌شود.</div>
+      </div>
+
+      <div class="field">
+        <label class="check"><input type="checkbox" name="attested_safe" x-model="attested"> تأیید می‌کنم این کالا سالم، ایمن و فراخوان‌نشده است و عکسی از کودک در آگهی نیست.</label>
+        {{ form.attested_safe.errors }}
+      </div>
+
+      <div class="step-nav">
+        <button class="btn btn-ghost" type="button" @click="prev()">→ مرحلهٔ قبل</button>
+        <button class="btn btn-primary" type="button" @click="next()">دیدن پیش‌نمایش ←</button>
+      </div>
+    </section>
+
+    <!-- STEP 6 — preview -->
+    <section class="steppane" :class="{'is-on': step===6}">
+      <h2 style="font-size:17px;margin-bottom:4px">پیش‌نمایش آگهی</h2>
+      <p class="hint" style="margin-bottom:16px">دقیقاً همین‌طور در فهرست و در صفحهٔ آگهی دیده می‌شود.</p>
+
+      <div class="preview-2">
+        <div>
+          <div class="hint" style="margin-bottom:6px">در فهرست آگهی‌ها:</div>
+          <div class="card" style="max-width:230px">
+            <div class="ph ph-a" :class="{'has-img': coverUrl()}">
+              <img x-show="coverUrl()" :src="coverUrl()" alt="">
+              <span aria-hidden="true" x-text="rootObj() ? rootObj().emoji : '🧸'"></span>
+              <span class="ph-count num">۱/<span x-text="fa(previews.length + {{ existing_images|length }})"></span></span>
+            </div>
+            <div class="card-body">
+              <h3 class="card-title" x-text="title || 'عنوان آگهی'"></h3>
+              <div class="card-tags"><span class="badge" :class="condBadge()" x-text="condLabel()"></span>{% if user.is_verified %}<span class="badge badge-verified">تأییدشده</span>{% endif %}</div>
+              <div class="card-micro"><span><b x-text="ageLabel()"></b></span><span x-text="completeness()"></span></div>
+              <div class="card-price num"><span x-text="price || '—'"></span> <small>تومان</small></div>
+              <div class="card-meta"><span>هم‌اکنون در <span x-text="districtName()"></span></span></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="hint" style="margin-bottom:6px">مشخصاتی که ثبت کرده‌اید:</div>
+          <table class="attr-table">
+            <tbody>
+              <tr><th>نوع آگهی</th><td>فروش</td></tr>
+              <tr><th>دسته‌بندی</th><td x-text="catLabel()"></td></tr>
+              <tr><th>ردهٔ سنی</th><td x-text="ageLabel()"></td></tr>
+              <tr><th>وضعیت</th><td x-text="condLabel()"></td></tr>
+              <tr><th>کامل بودن</th><td x-text="completeness()"></td></tr>
+              <tr><th>برند</th><td x-text="brandLabel()"></td></tr>
+              <tr><th>قیمت</th><td class="num"><span x-text="price || '—'"></span> تومان <span x-show="negotiable">(قابل مذاکره)</span></td></tr>
+              <tr x-show="orig"><th>قیمت نو</th><td class="num"><span x-text="orig"></span> تومان</td></tr>
+              <tr><th>یادداشت بهداشتی</th><td x-text="hygiene || '—'"></td></tr>
+              <tr><th>محله</th><td x-text="districtName()"></td></tr>
+              <tr><th>تماس</th><td x-text="[allow_chat ? 'چت' : null, allow_phone ? 'نمایش شماره' : null].filter(Boolean).join(' + ') || '—'"></td></tr>
+              <tr><th>عکس‌ها</th><td class="num"><span x-text="fa(previews.length + {{ existing_images|length }})"></span> عکس</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="notice notice-warn" style="margin-top:18px">
+        <span class="ni" aria-hidden="true">⏱️</span>
+        <div>
+          <b>آگهی شما پس از بررسی، تا حداکثر {{ sla|fa }} ساعت دیگر منتشر می‌شود.</b><br>
+          هر آگهی پیش از انتشار بررسی می‌شود (شنبه تا چهارشنبه، ۹ تا ۱۷). اگر چیزی نیاز به اصلاح داشته باشد پیامک می‌گیرید و می‌توانید ویرایش کنید.
+        </div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn btn-ghost" type="button" @click="go(3)">→ ویرایش</button>
+        <button class="btn btn-action btn-lg" type="submit" :disabled="submitting" @click="submitting=true">{% if listing %}ذخیره و ارسال برای بررسی{% else %}ثبت آگهی و ارسال برای بررسی{% endif %}</button>
+      </div>
+    </section>
+  </div>
+  </form>
+
+  <div class="hint" style="text-align:center;margin:14px 0 30px">
+    با ثبت آگهی، <a href="{% url 'listings:page' 'terms' %}" style="color:var(--teal-700)">قوانین وندرکیدز</a> را می‌پذیرید.
+    سقف آگهی فعال برای حساب شما: <b class="num">{{ user.listing_cap|fa }}</b> آگهی.
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+window.WK_CATS = {{ categories_json|safe }};
+window.WK_DISTS = {{ districts_json|safe }};
+function postForm(categories, districts) {
+  var AGES = {% autoescape off %}[{% for k, v in ages %}["{{ k }}","{{ v }}"]{% if not forloop.last %},{% endif %}{% endfor %}]{% endautoescape %};
+  var CONDS = {% autoescape off %}[{% for k, v in conditions %}["{{ k }}","{{ v }}"]{% if not forloop.last %},{% endif %}{% endfor %}]{% endautoescape %};
+  var BRANDS = {% autoescape off %}{ {% for b in brands %}"{{ b.id }}":"{{ b.name|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %} }{% endautoescape %};
+  var initial = {
+    type: "{{ form.type.value|default:'sell' }}",
+    cat: {{ form.category.value|default:'null' }},
+    title: "{{ form.title.value|default:''|escapejs }}",
+    age: "{{ form.age_range.value|default:'' }}",
+    brand: "{{ form.brand.value|default:'' }}",
+    cond: "{{ form.condition.value|default:'' }}",
+    is_complete: {{ form.is_complete.value|yesno:'true,false,true' }},
+    has_box: {{ form.has_box.value|yesno:'true,false,false' }},
+    has_manual: {{ form.has_manual.value|yesno:'true,false,false' }},
+    has_battery: {{ form.has_battery.value|yesno:'true,false,false' }},
+    missing_parts: {{ form.missing_parts.value|yesno:'true,false,false' }},
+    hygiene: "{{ form.hygiene_note.value|default:''|escapejs }}",
+    desc: "{{ form.description.value|default:''|escapejs }}",
+    price: "{{ form.price.value|default:''|escapejs }}",
+    orig: "{{ form.original_price.value|default:''|escapejs }}",
+    negotiable: {{ form.is_negotiable.value|yesno:'true,false,true' }},
+    city: "{{ form.city.value|default:default_city_id|default:'' }}",
+    district: "{{ form.district.value|default:default_district_id|default:'' }}",
+    meetup: "{{ form.meetup_hint.value|default:''|escapejs }}",
+    allow_chat: {{ form.allow_chat.value|yesno:'true,false,true' }},
+    allow_phone: {{ form.allow_phone.value|yesno:'true,false,true' }},
+    attested: {{ form.attested_safe.value|yesno:'true,false,false' }},
+    step: {{ first_error_step|default:1 }},
+    existing: {{ existing_images|length }}
+  };
+  var FA = '۰۱۲۳۴۵۶۷۸۹';
+  function fa(s) { return String(s).replace(/[0-9]/g, function (d) { return FA[+d]; }); }
+  function fmt(v) { v = String(v).replace(/[۰-۹]/g, function (d) { return String(FA.indexOf(d)); }).replace(/[^\d]/g, ''); return v ? fa(Number(v).toLocaleString('en-US')).replace(/,/g, '٬') : ''; }
+  function num(v) { return parseInt(String(v).replace(/[۰-۹]/g, function (d) { return String(FA.indexOf(d)); }).replace(/[^\d]/g, ''), 10) || 0; }
+  return Object.assign({}, initial, {
+    steps: ['نوع آگهی', 'دسته‌بندی', 'مشخصات', 'عکس‌ها', 'قیمت و محله', 'پیش‌نمایش'],
+    categories: categories, districts: districts, root: null, catQuery: '', previews: [], files: [], submitting: false,
+    fa: fa,
+    init: function () {
+      var self = this;
+      this.price = fmt(this.price); this.orig = fmt(this.orig);
+      if (this.cat) {
+        categories.forEach(function (r) { if (r.id === self.cat || r.children.some(function (c) { return c.id === self.cat; })) self.root = r.id; });
+      }
+      if (!this.city) { var first = Object.keys(districts)[0]; if (first) this.city = first; }
+      this.$watch('step', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    },
+    rootObj: function () { var self = this; return categories.filter(function (r) { return r.id === self.root; })[0] || null; },
+    pickRoot: function (r) { this.root = r.id; this.cat = r.children.length ? (r.children.some(c => c.id === this.cat) ? this.cat : null) : r.id; },
+    suggestion: function () {
+      var q = this.catQuery.trim().toLowerCase(); if (!q) return null;
+      for (var i = 0; i < categories.length; i++) {
+        var r = categories[i];
+        for (var j = 0; j < r.children.length; j++) if (r.children[j].name.toLowerCase().indexOf(q) >= 0 || q.indexOf(r.children[j].name.toLowerCase()) >= 0) return { root: r, cat: r.children[j], label: r.name + ' › ' + r.children[j].name };
+        if (r.name.toLowerCase().indexOf(q) >= 0 || q.indexOf(r.name.toLowerCase()) >= 0) return { root: r, cat: null, label: r.name };
+      }
+      return null;
+    },
+    pickSuggestion: function () { var s = this.suggestion(); if (!s) return; this.root = s.root.id; this.cat = s.cat ? s.cat.id : s.root.id; },
+    catLabel: function () { var r = this.rootObj(); if (!r) return '—'; var c = r.children.filter(c => c.id === this.cat)[0]; return c ? r.name + ' › ' + c.name : r.name; },
+    ageLabel: function () { var a = AGES.filter(x => x[0] === this.age)[0]; return a ? a[1] : '—'; },
+    condLabel: function () { var c = CONDS.filter(x => x[0] === this.cond)[0]; return c ? c[1] : '—'; },
+    condBadge: function () { return { new: 'badge-new', likenew: 'badge-likenew', used: 'badge-used', repair: 'badge-repair' }[this.cond] || 'badge-used'; },
+    brandLabel: function () { return BRANDS[this.brand] || 'بدون برند / دست‌ساز'; },
+    completeness: function () { if (this.missing_parts) return 'چند قطعه کم دارد'; var p = []; if (this.is_complete) p.push('همهٔ قطعات موجود'); if (this.has_box) p.push('جعبه'); if (this.has_manual) p.push('دفترچه'); return p.join('، ') || '—'; },
+    districtName: function () { var ds = districts[String(this.city)] || []; var d = ds.filter(x => String(x.id) === String(this.district))[0]; return d ? d.name : '—'; },
+    pctOff: function () { var p = num(this.price), o = num(this.orig); return (p && o && o > p) ? Math.round((1 - p / o) * 100) : 0; },
+    coverUrl: function () { return this.previews.length ? this.previews[0].url : (document.querySelector('#upload-grid .up-slot img') ? document.querySelector('#upload-grid .up-slot img').src : ''); },
+    onFiles: function (e) {
+      var self = this, list = Array.prototype.slice.call(e.target.files);
+      var room = {{ max_images }} - this.existing - this.files.length;
+      list.slice(0, Math.max(0, room)).forEach(function (f) {
+        self.files.push(f);
+        self.previews.push({ key: Math.random(), url: URL.createObjectURL(f) });
+      });
+      this.syncInput();
+    },
+    removeFile: function (i) { this.files.splice(i, 1); this.previews.splice(i, 1); this.syncInput(); },
+    syncInput: function () { var dt = new DataTransfer(); this.files.forEach(function (f) { dt.items.add(f); }); this.$refs.files.files = dt.files; },
+    validate: function (s) {
+      if (s === 2 && !this.cat) { alert('دسته‌بندی را انتخاب کنید.'); return false; }
+      if (s === 3) {
+        if (this.title.trim().length < 5) { alert('عنوان آگهی را بنویسید.'); return false; }
+        if (!this.age) { alert('ردهٔ سنی را انتخاب کنید.'); return false; }
+        if (!this.cond) { alert('وضعیت کالا را انتخاب کنید.'); return false; }
+        if (this.hygiene.trim().length < 8) { alert('یادداشت بهداشتی را بنویسید.'); return false; }
+        if (this.desc.trim().length < 20) { alert('توضیحات را کمی کامل‌تر بنویسید.'); return false; }
+      }
+      if (s === 4 && this.previews.length + this.existing < 1) { alert('حداقل یک عکس لازم است.'); return false; }
+      if (s === 5) {
+        if (!num(this.price)) { alert('قیمت را وارد کنید.'); return false; }
+        if (!this.district) { alert('محله را انتخاب کنید.'); return false; }
+        if (!this.allow_chat && !this.allow_phone) { alert('حداقل یکی از راه‌های تماس باید فعال باشد.'); return false; }
+        if (!this.attested) { alert('برای ادامه باید ایمنی کالا و نبود عکس کودک را تأیید کنید.'); return false; }
+      }
+      return true;
+    },
+    next: function () { if (this.validate(this.step)) this.step = Math.min(6, this.step + 1); },
+    prev: function () { this.step = Math.max(1, this.step - 1); },
+    go: function (n) { if (n < this.step) { this.step = n; return; } for (var s = this.step; s < n; s++) if (!this.validate(s)) { this.step = s; return; } this.step = n; }
+  });
+}
+</script>
+{% endblock %}

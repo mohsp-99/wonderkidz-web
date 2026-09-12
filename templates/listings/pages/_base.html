@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} | وندرکیدز{% endblock %}
+{% block content %}
+<div class="wrap-narrow" style="margin-top:22px;margin-bottom:34px">
+  <nav class="crumb"><a href="{% url 'listings:home' %}">خانه</a><span class="sepc">›</span><span>{{ page_title }}</span></nav>
+  <div class="panel panel-pad" style="padding:24px">
+    <h1 style="font-size:22px;margin-bottom:14px">{{ page_title }}</h1>
+    {% block page %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

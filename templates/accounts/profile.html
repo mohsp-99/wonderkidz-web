@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}آگهی‌های من | وندرکیدز{% endblock %}
+{% block content %}
+<div class="wrap">
+
+  <!-- ================= ACCOUNT HEADER ================= -->
+  <div class="pf-head">
+    <div class="avatar{% if profile_user.is_official %} official{% endif %}" aria-hidden="true">{% if profile_user.is_official %}✦{% else %}{{ profile_user.initial }}{% endif %}</div>
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <b style="font-size:16px">{{ profile_user.name }}</b>
+        {% if profile_user.is_official %}<span class="badge badge-official">✦ فروشگاه رسمی</span>
+        {% elif profile_user.is_pro %}<span class="badge badge-verified">✓ فروشندهٔ حرفه‌ای</span>
+        {% elif profile_user.is_verified %}<span class="badge badge-verified">✓ والد تأییدشده</span>{% endif %}
+      </div>
+      <div class="hint" style="margin:2px 0 0">
+        <span class="num" dir="ltr">{{ profile_user.phone|phone }}</span> · عضو از {{ profile_user.date_joined|jmonth }}{% if profile_user.district %} · {{ profile_user.district.name }}{% endif %}
+      </div>
+    </div>
+    <div class="pf-stats">
+      <div><b class="num">{{ active|length|fa }}</b><span>آگهی فعال</span></div>
+      <div><b class="num">{{ pending_count|fa }}</b><span>در انتظار تأیید</span></div>
+      <div><b class="num">{{ sold|length|fa }}</b><span>فروخته‌شده</span></div>
+      <div><b class="num">{{ week_views|fa }}</b><span>بازدید آگهی‌ها</span></div>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="#t-account" data-goto-tab="t-account">ویرایش حساب</a>
+  </div>
+
+  <!-- ================= TABS ================= -->
+  <div class="panel" style="margin-top:14px;padding:0;overflow:hidden">
+    <div class="tabs" data-tabgroup>
+      <button class="tab is-on" data-tab="t-active" type="button">آگهی‌های فعال <span class="cnt num">{{ active|length|fa }}</span></button>
+      <button class="tab" data-tab="t-pending" type="button">در انتظار تأیید <span class="cnt num">{{ pending|length|fa }}</span></button>
+      <button class="tab" data-tab="t-sold" type="button">فروخته شد <span class="cnt num">{{ sold|length|fa }}</span></button>
+      <button class="tab" data-tab="t-saved" type="button">ذخیره‌شده‌ها <span class="cnt num">{{ saved|length|fa }}</span></button>
+      <button class="tab" data-tab="t-account" type="button">اطلاعات حساب</button>
+    </div>
+
+    <div style="padding:16px">
+
+      <!-- ---- active ---- -->
+      <div class="tabpane is-on" id="t-active">
+        {% for l in active %}{% include "accounts/_listing_row.html" %}{% empty %}
+        <div class="empty" style="padding:30px 16px;text-align:center">
+          <span class="e-icon" aria-hidden="true">🧸</span>
+          هنوز آگهی فعالی ندارید.<br>
+          <a class="btn btn-action btn-sm" style="margin-top:10px" href="{% url 'listings:post' %}">＋ ثبت آگهی</a>
+        </div>
+        {% endfor %}
+        <div class="hint" style="text-align:center;margin-top:14px">
+          آگهی‌ها ۳۰ روز فعال می‌مانند و بعد قابل تمدیدند. سقف آگهی فعال برای حساب شما: <b class="num">{{ profile_user.listing_cap|fa }}</b>
+        </div>
+      </div>
+
+      <!-- ---- pending ---- -->
+      <div class="tabpane" id="t-pending">
+        <div class="notice notice-warn" style="margin-bottom:14px">
+          <span class="ni" aria-hidden="true">⏱️</span>
+          <div>آگهی‌های در این بخش در صف بررسی اپراتور هستند. زمان معمول انتشار: <b>کمتر از {{ MODERATION_SLA_HOURS|fa }} ساعت</b> در ساعات کاری (شنبه تا چهارشنبه، ۹ تا ۱۷).</div>
+        </div>
+        {% for l in pending %}{% include "accounts/_listing_row.html" %}{% empty %}
+        <div class="empty" style="padding:26px 16px;text-align:center"><span class="e-icon" aria-hidden="true">✅</span>آگهی‌ای در انتظار بررسی نیست.</div>
+        {% endfor %}
+      </div>
+
+      <!-- ---- sold ---- -->
+      <div class="tabpane" id="t-sold">
+        {% for l in sold %}{% include "accounts/_listing_row.html" %}{% empty %}
+        <div class="empty" style="padding:26px 16px;text-align:center"><span class="e-icon" aria-hidden="true">🏷️</span>هنوز چیزی فروخته نشده.</div>
+        {% endfor %}
+        {% if sold %}
+        <div class="notice notice-green" style="margin-top:12px">
+          <span class="ni" aria-hidden="true">♻️</span>
+          <div>تا حالا <b class="num">{{ sold|length|fa }}</b> اسباب‌بازی از خانهٔ شما به خانهٔ یک بچهٔ دیگر رفته است. دست شما درد نکند.</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- ---- saved ---- -->
+      <div class="tabpane" id="t-saved">
+        {% if saved %}
+        <div class="grid-cards">
+          {% for s in saved %}{% include "partials/card.html" with listing=s.listing %}{% endfor %}
+        </div>
+        {% else %}
+        <div class="empty" style="padding:26px 16px;text-align:center"><span class="e-icon" aria-hidden="true">♡</span>آگهی ذخیره‌شده‌ای ندارید. روی «ذخیره» در صفحهٔ آگهی بزنید.</div>
+        {% endif %}
+        {% for ss in saved_searches %}
+        <div class="notice notice-info" style="margin-top:14px">
+          <span class="ni" aria-hidden="true">🔔</span>
+          <div>جستجوی ذخیره‌شده: <b><a href="{% url 'listings:search' %}?{{ ss.querystring }}">«{{ ss.label }}»</a></b> — برای آگهی‌های تازه پیامک می‌گیرید.
+            <form method="post" action="{% url 'accounts:saved_search_delete' ss.pk %}" style="display:inline">{% csrf_token %}<button class="btn btn-quiet btn-sm" type="submit">حذف</button></form></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- ---- account ---- -->
+      <div class="tabpane" id="t-account">
+        <form class="wrap-narrow" style="padding:0;margin:0" method="post" action="{% url 'accounts:account_edit' %}">
+          {% csrf_token %}
+          <div class="form-2col">
+            <div class="field">
+              <label class="label" for="a-name">نام نمایشی</label>
+              <input class="input" id="a-name" name="display_name" value="{{ form.display_name.value|default:'' }}" maxlength="60" placeholder="مثلاً مریم ر.">
+              <div class="hint">نام کامل لازم نیست؛ همین برای خریدارها کافی است.</div>
+            </div>
+            <div class="field">
+              <label class="label" for="a-phone">شمارهٔ موبایل</label>
+              <input class="input num" id="a-phone" dir="ltr" value="{{ profile_user.phone|phone }}" readonly style="background:var(--surface-2)">
+              <div class="hint">شمارهٔ تأییدشده — هویت حساب شماست و قابل تغییر نیست.</div>
+            </div>
+            <div class="field">
+              <label class="label" for="a-city">شهر</label>
+              <select class="select" id="a-city" name="city">
+                <option value="">—</option>
+                {% for c in form.fields.city.queryset %}<option value="{{ c.pk }}" {% if form.city.value|stringformat:"s" == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label class="label" for="a-dist">محلهٔ پیش‌فرض</label>
+              <select class="select" id="a-dist" name="district">
+                <option value="">—</option>
+                {% for d in form.fields.district.queryset %}<option value="{{ d.pk }}" {% if form.district.value|stringformat:"s" == d.pk|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label">اعلان‌ها</label>
+            <label class="toggle-row"><span>پیامک وقتی آگهی‌ام تأیید یا رد شد</span><input type="checkbox" name="notify_moderation" {% if profile_user.notify_moderation %}checked{% endif %}><span class="switch"></span></label>
+            <label class="toggle-row"><span>پیامک وقتی کسی به من پیام داد</span><input type="checkbox" name="notify_chat" {% if profile_user.notify_chat %}checked{% endif %}><span class="switch"></span></label>
+            <label class="toggle-row"><span>پیامک آگهی‌های تازه در جستجوهای ذخیره‌شده</span><input type="checkbox" name="notify_saved_search" {% if profile_user.notify_saved_search %}checked{% endif %}><span class="switch"></span></label>
+          </div>
+
+          <div class="panel panel-pad" style="background:var(--teal-50);border-color:var(--teal-100)">
+            <div style="font-size:13px;font-weight:700;color:var(--teal-800);margin-bottom:4px">وضعیت حساب</div>
+            <div class="hint" style="color:var(--teal-800)">
+              {% if profile_user.is_verified %}<span class="badge badge-verified">✓ شمارهٔ تأییدشده</span>{% endif %}
+              سقف آگهی فعال: <b class="num">{{ profile_user.listing_cap|fa }}</b> ·
+              نوع حساب: <b>{{ profile_user.get_account_type_display }}</b> ·
+              بدون هیچ هزینه یا اشتراکی.
+            </div>
+          </div>
+
+          <div class="step-nav">
+            <button class="btn btn-danger" type="submit" form="logout-form">خروج از حساب</button>
+            <button class="btn btn-primary" type="submit">ذخیرهٔ تغییرات</button>
+          </div>
+        </form>
+        <form id="logout-form" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}</form>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-goto-tab]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      var b = document.querySelector('[data-tab="' + a.dataset.gotoTab + '"]');
+      if (b) { b.click(); b.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+    });
+  });
+});
+</script>
+{% endblock %}

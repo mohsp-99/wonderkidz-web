@@ -1,0 +1,10 @@
+{% extends "listings/pages/_base.html" %}
+{% block page %}
+<details open style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">ثبت آگهی هزینه دارد؟</summary><p class="hint" style="margin-top:6px">نه. نه اشتراک، نه کارمزد فروش. سقف آگهی فعال برای حساب‌های تازه {{ NEW_ACCOUNT_LISTING_CAP|fa }} آگهی است.</p></details>
+<details style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">آگهی من کی منتشر می‌شود؟</summary><p class="hint" style="margin-top:6px">آگهی‌ها به‌صورت خودکار بررسی می‌شوند و اگر بدون هشدار باشند فوراً منتشر می‌شوند. موارد پرچم‌دار را اپراتور معمولاً کمتر از {{ MODERATION_SLA_HOURS|fa }} ساعت در ساعات کاری بررسی می‌کند.</p></details>
+<details style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">چرا نمی‌توانم عکس بچه‌ام را بگذارم؟</summary><p class="hint" style="margin-top:6px">برای حفظ حریم خصوصی کودکان. هیچ عکسی نباید چهره یا بدن کودک داشته باشد؛ آگهی‌های این‌چنینی تأیید نمی‌شوند.</p></details>
+<details style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">پرداخت و ارسال چطور انجام می‌شود؟</summary><p class="hint" style="margin-top:6px">بین خودتان. برای اقلام سبک قرار حضوری در جای عمومی، برای اقلام بزرگ پیک (اسنپ‌باکس / الوپیک). پیش از دیدن کالا هیچ مبلغی واریز نکنید.</p></details>
+<details style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">چه چیزهایی نمی‌شود فروخت؟</summary><p class="hint" style="margin-top:6px">لباس کودک، صندلی خودرو، کالای فراخوان‌شده، اسباب‌بازی شکسته با لبهٔ تیز و هر کالایی که مربوط به کودک نیست.</p></details>
+<details style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">آگهی تا کی فعال می‌ماند؟</summary><p class="hint" style="margin-top:6px">۳۰ روز. پیش از انقضا می‌توانید از «آگهی‌های من» تمدیدش کنید.</p></details>
+<details style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">شهرهای دیگر کی اضافه می‌شوند؟</summary><p class="hint" style="margin-top:6px">فعلاً فقط تهران فعال است. محله‌ها و شهرهای بعدی وقتی اضافه می‌شوند که جستجو در آن‌ها نتیجهٔ نزدیک بدهد.</p></details>
+{% endblock %}

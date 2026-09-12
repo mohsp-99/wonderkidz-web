@@ -1,0 +1,36 @@
+{% load static %}<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ SITE_NAME }} | خرید و فروش اسباب‌بازی دست‌دوم کودکان{% endblock %}</title>
+<meta name="description" content="{% block meta_description %}تابلوی خریدوفروش اسباب‌بازی دست‌دوم کودکان بین والدین محله‌های تهران. آگهی‌ها پیش از انتشار بررسی می‌شوند.{% endblock %}">
+{% block head_extra %}{% endblock %}
+<link rel="canonical" href="{{ SITE_URL }}{{ request.path }}">
+<meta name="theme-color" content="#0f6b62">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<link rel="stylesheet" href="{% static 'css/app.css' %}">
+<script src="{% static 'js/htmx.min.js' %}" defer></script>
+<script src="{% static 'js/alpine.min.js' %}" defer></script>
+<meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+<body class="{% block body_class %}{% endblock %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+{% block header %}{% include "partials/header.html" %}{% endblock %}
+{% if messages %}
+<div class="wrap" style="margin-top:14px">
+  {% for m in messages %}
+  <div class="notice {% if m.tags == 'success' %}notice-green{% elif m.tags == 'error' %}notice-red{% elif m.tags == 'warning' %}notice-warn{% else %}notice-info{% endif %}" style="margin-bottom:8px">
+    <span class="ni" aria-hidden="true">{% if m.tags == 'success' %}✅{% elif m.tags == 'error' %}⛔{% elif m.tags == 'warning' %}⏱️{% else %}💡{% endif %}</span>
+    <div>{{ m|safe }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% block content %}{% endblock %}
+{% block footer %}{% include "partials/footer.html" %}{% endblock %}
+<script src="{% static 'js/app.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

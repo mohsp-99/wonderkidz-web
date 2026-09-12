@@ -1,0 +1,8 @@
+{% for listing in page %}{% include "partials/card.html" %}{% endfor %}
+{% if page.has_next %}
+<div id="more-{{ page.next_page_number }}" style="grid-column:1/-1;text-align:center;margin:10px 0 6px">
+  <a class="btn btn-ghost btn-lg" href="{% qs_replace %}&page={{ page.next_page_number }}"
+     hx-get="{% qs_replace %}&page={{ page.next_page_number }}" hx-target="#more-{{ page.next_page_number }}" hx-swap="outerHTML" hx-indicator="this">آگهی‌های بیشتر</a>
+  <div class="hint" style="margin-top:8px"><span class="num">{{ page.end_index|fa }}</span> آگهی از <span class="num">{{ page.paginator.count|fa }}</span> نمایش داده شد</div>
+</div>
+{% endif %}

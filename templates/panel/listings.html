@@ -1,0 +1,38 @@
+{% extends "panel/base_panel.html" %}
+{% block panel_title %}آگهی‌ها{% endblock %}
+{% block panel %}
+<div class="panel panel-pad" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+  <form method="get" style="display:flex;gap:8px;flex:1;min-width:260px">
+    <input type="hidden" name="status" value="{{ status }}">
+    <input class="input" type="search" name="q" value="{{ q }}" placeholder="جستجو با عنوان، کد آگهی یا شمارهٔ فروشنده…">
+    <button class="btn btn-primary btn-sm" type="submit">جستجو</button>
+  </form>
+</div>
+<div class="chips-scroll" style="margin-top:10px">
+  <a class="chip{% if not status %} is-on{% endif %}" href="{% url 'panel:listings' %}?q={{ q }}">همه</a>
+  {% for val, label in statuses %}<a class="chip{% if status == val %} is-on{% endif %}" href="{% url 'panel:listings' %}?status={{ val }}&q={{ q }}">{{ label }} <span class="num">{{ counts|get_item:val|default:0|fa }}</span></a>{% endfor %}
+</div>
+<div class="panel" style="margin-top:12px;overflow:hidden;padding:0;overflow-x:auto">
+  <table class="adm-table">
+    <thead><tr><th>آگهی</th><th>فروشنده</th><th>وضعیت</th><th>قیمت</th><th>دسته / محله</th><th>بازدید</th><th>زمان</th><th>اقدام</th></tr></thead>
+    <tbody>
+    {% for l in rows %}
+      <tr id="lrow-{{ l.pk }}">
+        <td><a href="{{ l.get_absolute_url }}" target="_blank" rel="noopener" style="color:var(--teal-700);font-weight:600">{{ l.title }}</a><div class="hint" style="margin:0">کد {{ l.code|fa }}</div></td>
+        <td><a href="{% url 'panel:user_detail' l.owner_id %}">{{ l.owner.name }}</a></td>
+        <td><span class="badge {% if l.status == 'live' %}badge-live{% elif l.status == 'pending' %}badge-pending{% elif l.status == 'sold' or l.status == 'rejected' or l.status == 'removed' %}badge-sold{% else %}badge-soon{% endif %}">{{ l.get_status_display }}</span></td>
+        <td class="num">{% if l.price %}{{ l.price|price }}{% else %}—{% endif %}</td>
+        <td>{{ l.category.full_name }}<div class="hint" style="margin:0">{{ l.district.name }}</div></td>
+        <td class="num">{{ l.views_count|fa }}</td>
+        <td>{{ l.created_at|ago }}</td>
+        <td id="tslot-{{ l.pk }}">
+          {% if l.status == 'live' or l.status == 'pending' %}
+          <button class="btn btn-danger btn-sm" type="button" hx-post="{% url 'panel:takedown' l.pk %}" hx-target="#tslot-{{ l.pk }}" hx-confirm="این آگهی حذف شود؟" hx-on::after-request="document.getElementById('lrow-{{ l.pk }}').style.opacity='.35'">حذف</button>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}<tr><td colspan="8" class="hint" style="text-align:center;padding:30px">آگهی‌ای پیدا نشد.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

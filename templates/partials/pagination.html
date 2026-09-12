@@ -1,0 +1,7 @@
+{% if page.has_other_pages %}
+<nav class="pager" aria-label="صفحه‌بندی">
+  {% if page.has_previous %}<a class="btn btn-ghost btn-sm" href="{% qs_replace page=page.previous_page_number %}&page={{ page.previous_page_number }}">→ قبلی</a>{% endif %}
+  <span class="hint" style="align-self:center;margin:0">صفحهٔ <b class="num">{{ page.number|fa }}</b> از <b class="num">{{ page.paginator.num_pages|fa }}</b></span>
+  {% if page.has_next %}<a class="btn btn-ghost btn-sm" href="{% qs_replace %}&page={{ page.next_page_number }}">بعدی ←</a>{% endif %}
+</nav>
+{% endif %}

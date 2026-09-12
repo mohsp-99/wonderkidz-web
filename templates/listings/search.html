@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}{{ seo_title }} | وندرکیدز{% endblock %}
+{% block meta_description %}آگهی‌های {{ seo_title }} — اسباب‌بازی دست‌دوم کودکان با مشخصات کامل، بررسی‌شده پیش از انتشار.{% endblock %}
+{% block content %}
+<div class="wrap">
+  <nav class="crumb">
+    <a href="{% url 'listings:home' %}">خانه</a><span class="sepc">›</span>
+    <a href="{% url 'listings:search' %}">اسباب‌بازی کودک</a>
+    {% if category.parent %}<span class="sepc">›</span><a href="{{ category.parent.get_absolute_url }}">{{ category.parent.name }}</a>{% endif %}
+    {% if category %}<span class="sepc">›</span><a href="{{ category.get_absolute_url }}">{{ category.name }}</a>{% endif %}
+    {% if dists_sel|length == 1 %}<span class="sepc">›</span><span>{% for d in districts %}{% if d.slug == dists_sel.0 %}{{ d.name }}{% endif %}{% endfor %}</span>{% endif %}
+  </nav>
+</div>
+
+<div class="wrap search-layout">
+  <aside class="filters" data-filters aria-label="فیلترها">
+    <form method="get" action="{% url 'listings:search' %}" id="filter-form">
+      {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
+      {% if category %}<input type="hidden" name="cat" value="{{ category.slug }}">{% endif %}
+      {% if sort != 'newest' %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+      {% for a in ages_sel %}<input type="hidden" name="age" value="{{ a }}">{% endfor %}
+      <div class="fl-head">
+        <h3>فیلترها</h3>
+        <div style="display:flex;gap:10px;align-items:center">
+          <a class="clear" href="{% url 'listings:search' %}">حذف همه</a>
+          <button class="btn btn-sm btn-ghost filter-fab" data-closefilters type="button">بستن ✕</button>
+        </div>
+      </div>
+
+      <div class="fl-group">
+        <h4>دسته‌بندی</h4>
+        <ul class="fl-tree">
+          <li><a href="{% qs_replace cat=None %}"{% if not category %} class="is-on"{% endif %}>همهٔ اسباب‌بازی‌ها</a></li>
+          {% for r in roots %}
+          <li>
+            <a href="{% qs_replace cat=r.slug %}"{% if category and category.id == r.id %} class="is-on"{% endif %}>{% if selected_root and selected_root.id == r.id %}<b>{{ r.name }}</b>{% else %}{{ r.name }}{% endif %}</a>
+            {% if selected_root and selected_root.id == r.id and r.children.all %}
+            <ul class="sub">
+              {% for ch in r.children.all %}<li><a href="{% qs_replace cat=ch.slug %}"{% if category.id == ch.id %} class="is-on"{% endif %}>{{ ch.name }}</a></li>{% endfor %}
+            </ul>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="fl-group">
+        <h4>ردهٔ سنی</h4>
+        <div class="chips-row">
+          {% for key, short in ages %}<a class="chip{% if key in ages_sel %} is-on{% endif %}" href="{% qs_toggle 'age' key %}">{{ short }}</a>{% endfor %}
+        </div>
+      </div>
+
+      <div class="fl-group">
+        <h4>وضعیت کالا</h4>
+        {% for key, label in conds %}
+        <label class="check"><input type="checkbox" name="cond" value="{{ key }}"{% if key in conds_sel %} checked{% endif %} onchange="this.form.requestSubmit()"> {{ label }} <span class="c-count num">{{ cond_counts|get_item:key|default:0|fa }}</span></label>
+        {% endfor %}
+      </div>
+
+      <div class="fl-group">
+        <h4>کامل بودن</h4>
+        <label class="check"><input type="checkbox" name="complete" value="1"{% if request.GET.complete == '1' %} checked{% endif %} onchange="this.form.requestSubmit()"> همهٔ قطعات موجود است</label>
+        <label class="check"><input type="checkbox" name="box" value="1"{% if request.GET.box == '1' %} checked{% endif %} onchange="this.form.requestSubmit()"> جعبه / دفترچهٔ اصلی دارد</label>
+      </div>
+
+      <div class="fl-group">
+        <h4>محدودهٔ قیمت <span style="font-weight:400;font-size:11.5px;color:var(--ink-4)">تومان</span></h4>
+        <div class="price-row">
+          <input class="input num" type="text" name="min" inputmode="numeric" placeholder="از ۵۰٬۰۰۰" value="{{ request.GET.min }}" aria-label="حداقل قیمت" data-numeric>
+          <input class="input num" type="text" name="max" inputmode="numeric" placeholder="تا" value="{{ request.GET.max }}" aria-label="حداکثر قیمت" data-numeric>
+        </div>
+        <button class="btn btn-soft btn-sm btn-block" type="submit" style="margin-top:6px">اعمال قیمت</button>
+        {% if median %}<div class="hint">میانگین قیمت این دسته: <b class="num">{{ median|price }}</b> تومان</div>{% endif %}
+      </div>
+
+      <div class="fl-group">
+        <h4>برند</h4>
+        {% for b in brands %}
+        <label class="check"><input type="checkbox" name="brand" value="{{ b.slug }}"{% if b.slug in brands_sel %} checked{% endif %} onchange="this.form.requestSubmit()"> {{ b.name }} <span class="c-count num">{{ brand_counts|get_item:b.slug|default:0|fa }}</span></label>
+        {% endfor %}
+      </div>
+
+      <div class="fl-group">
+        <h4>محله</h4>
+        {% for d in districts %}
+        <label class="check"><input type="checkbox" name="dist" value="{{ d.slug }}"{% if d.slug in dists_sel %} checked{% endif %} onchange="this.form.requestSubmit()"> {{ d.name }} <span class="c-count num">{{ dist_counts|get_item:d.slug|default:0|fa }}</span></label>
+        {% endfor %}
+        <div class="hint">فعلاً فقط محله‌های آغازین فعال است. محله‌های بعدی وقتی اضافه می‌شوند که جستجو در آن‌ها نتیجهٔ نزدیک بدهد.</div>
+      </div>
+
+      <div class="fl-group">
+        <label class="toggle-row"><span>فقط آگهی‌های عکس‌دار</span><input type="checkbox" name="photo" value="1"{% if request.GET.photo == '1' %} checked{% endif %} onchange="this.form.requestSubmit()"><span class="switch"></span></label>
+        <label class="toggle-row"><span>فقط فروشگاه وندرکیدز</span><input type="checkbox" name="official" value="1"{% if request.GET.official == '1' %} checked{% endif %} onchange="this.form.requestSubmit()"><span class="switch"></span></label>
+        <label class="toggle-row"><span>فقط فروشندهٔ تأییدشده</span><input type="checkbox" name="verified" value="1"{% if request.GET.verified == '1' %} checked{% endif %} onchange="this.form.requestSubmit()"><span class="switch"></span></label>
+        <label class="toggle-row"><span>چت فعال باشد</span><input type="checkbox" name="chat" value="1"{% if request.GET.chat == '1' %} checked{% endif %} onchange="this.form.requestSubmit()"><span class="switch"></span></label>
+      </div>
+
+      <div class="fl-group drawer-only" style="position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line)">
+        <button class="btn btn-primary btn-block" type="submit">نمایش {{ total|fa }} نتیجه</button>
+      </div>
+    </form>
+  </aside>
+
+  <main>
+    <div class="results-bar">
+      <button class="btn btn-ghost btn-sm filter-fab" data-openfilters type="button">
+        <span aria-hidden="true">⚙︎</span> فیلترها {% if active_filter_count %}<span class="badge badge-likenew num">{{ active_filter_count|fa }}</span>{% endif %}
+      </button>
+      <div class="sort-tabs">
+        <a class="{% if sort == 'newest' %}is-on{% endif %}" href="{% qs_replace sort=None %}">جدیدترین</a>
+        <a class="{% if sort == 'cheapest' %}is-on{% endif %}" href="{% qs_replace sort='cheapest' %}">ارزان‌ترین</a>
+        <a class="{% if sort == 'expensive' %}is-on{% endif %}" href="{% qs_replace sort='expensive' %}">گران‌ترین</a>
+        <a class="{% if sort == 'nearest' %}is-on{% endif %}" href="{% qs_replace sort='nearest' %}">نزدیک‌ترین</a>
+      </div>
+      <div class="rb-count"><b class="num">{{ total|fa }}</b> آگهی در {{ city.name|default:"تهران" }}</div>
+    </div>
+
+    {% if pills %}
+    <div class="applied">
+      {% for key, val, label in pills %}
+      {% if key == 'cat' %}<a class="pill" href="{% url 'listings:search' %}{% qs_replace cat=None %}">{{ label }} <span>✕</span></a>
+      {% elif val %}<a class="pill" href="{% qs_toggle key val %}">{{ label }} <span>✕</span></a>
+      {% else %}<a class="pill" href="{% qs_replace %}" data-remove="{{ key }}">{{ label }} <span>✕</span></a>{% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if page.object_list %}
+    <div class="grid-cards" id="results">
+      {% include "listings/_results.html" %}
+    </div>
+    {% else %}
+    <div class="empty" style="margin-top:12px">
+      <span class="e-icon" aria-hidden="true">🔍</span>
+      آگهی‌ای با این فیلترها پیدا نشد.<br>
+      <span class="hint">فیلترها را کمتر کنید یا <a href="{% url 'listings:search' %}" style="color:var(--teal-700)">همهٔ آگهی‌ها</a> را ببینید.</span>
+    </div>
+    {% endif %}
+
+    <div class="notice notice-info" style="margin-top:18px">
+      <span class="ni" aria-hidden="true">🔔</span>
+      <div><b>چیزی که می‌خواهید پیدا نشد؟</b> جستجویتان را ذخیره کنید تا هر وقت آگهی تازه‌ای ثبت شد پیامک بگیرید.
+        {% if user.is_authenticated %}
+        <form method="post" action="{% url 'listings:save_search' %}" style="display:inline">{% csrf_token %}
+          <input type="hidden" name="querystring" value="{{ querystring }}"><input type="hidden" name="label" value="{{ seo_title }}">
+          <button class="btn btn-soft btn-sm" type="submit" style="margin-right:8px">ذخیرهٔ این جستجو</button>
+        </form>
+        {% else %}
+        <a class="btn btn-soft btn-sm" href="{% url 'accounts:login' %}?next={{ request.get_full_path|urlencode }}" style="margin-right:8px">ذخیرهٔ این جستجو</a>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// "remove pill" links for single-valued keys: strip the key from the querystring
+document.querySelectorAll('.applied [data-remove]').forEach(function (a) {
+  var u = new URL(a.href, location.href); u.searchParams.delete(a.dataset.remove); u.searchParams.delete('page'); a.href = u.pathname + (u.search || '');
+});
+</script>
+{% endblock %}

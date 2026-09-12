@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}وندرکیدز | خرید و فروش اسباب‌بازی دست‌دوم کودکان{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="wrap">
+    <h1>اسباب‌بازی‌ای که بچه‌ات ازش بزرگ شده، برای یک بچهٔ دیگر تازه است.</h1>
+    <p>تابلوی خریدوفروش اسباب‌بازی دست‌دوم، فقط بین والدین محله‌های {{ city.name|default:"تهران" }}. آگهی‌ها پیش از انتشار بررسی می‌شوند.</p>
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+      <a class="btn btn-action btn-lg" href="{% url 'listings:post' %}">آگهی رایگان ثبت کنید</a>
+      <a class="btn btn-lg" style="background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.28)" href="{% url 'listings:search' %}">گشتن در آگهی‌ها</a>
+    </div>
+    <div class="hero-stats">
+      <div><b class="num">{{ live_count|fa }}</b> آگهی فعال</div>
+      <div><b class="num">{{ district_count|fa }}</b> محلهٔ فعال در {{ city.name|default:"تهران" }}</div>
+      <div><b class="num">۱۰۰٪</b> آگهی‌های بررسی‌شده</div>
+      <div><b class="num">۰</b> تومان هزینهٔ ثبت آگهی</div>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <h2>دنبال چه چیزی می‌گردید؟</h2>
+        <div class="sec-sub">دسته‌بندی‌ها بر اساس نوع بازی، نه نوع فروشگاه</div>
+      </div>
+      <a class="more" href="{% url 'listings:search' %}">همهٔ دسته‌ها ←</a>
+    </div>
+    <div class="cat-grid">
+      {% for c in roots %}
+      <a class="cat-tile" href="{{ c.get_absolute_url }}"><span class="cat-ic" style="background:{{ c.color }}">{{ c.emoji }}</span><span class="cat-n">{{ c.name }}</span><span class="cat-c num">{{ c.live_count|fa }} آگهی</span></a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <h2>بر اساس سن کودک</h2>
+        <div class="sec-sub">همان سه زاویهٔ همیشگی: دسته‌بندی، سن، برند</div>
+      </div>
+    </div>
+    <div class="chips-scroll" style="margin-bottom:12px">
+      <a class="chip is-on" href="{% url 'listings:search' %}">همهٔ سن‌ها</a>
+      {% for key, label, emoji in ages %}<a class="chip" href="{% url 'listings:search' %}?age={{ key }}">{{ label }} {{ emoji }}</a>{% endfor %}
+    </div>
+    <div class="chips-scroll">
+      <span style="font-size:12.5px;color:var(--ink-3);align-self:center;white-space:nowrap">برندها:</span>
+      {% for b in brands %}<a class="chip" href="{% url 'listings:search' %}?brand={{ b.slug }}">{{ b.name }}</a>{% endfor %}
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-head">
+      <div>
+        <h2>تازه‌ترین آگهی‌ها</h2>
+        <div class="sec-sub">{{ district_names|default:"محله‌های فعال" }}</div>
+      </div>
+      <a class="more" href="{% url 'listings:search' %}">دیدن همه ←</a>
+    </div>
+    {% if latest %}
+    <div class="grid-cards">
+      {% for listing in latest %}{% include "partials/card.html" %}{% endfor %}
+    </div>
+    <div style="text-align:center;margin-top:20px">
+      <a class="btn btn-ghost btn-lg" href="{% url 'listings:search' %}">دیدن {{ live_count|fa }} آگهی</a>
+    </div>
+    {% else %}
+    <div class="empty"><span class="e-icon" aria-hidden="true">🧸</span>هنوز آگهی‌ای منتشر نشده. <a href="{% url 'listings:post' %}" style="color:var(--teal-700);font-weight:600">اولین آگهی را شما بگذارید.</a></div>
+    {% endif %}
+  </section>
+
+  <section class="sec">
+    <div class="green-strip">
+      <div>
+        <h3><span aria-hidden="true">♻️</span> یک اسباب‌بازی، چند کودک</h3>
+        <p>هر اسباب‌بازی‌ای که دست‌به‌دست می‌شود، یک خرید تازه کمتر و یک جعبهٔ پلاستیک کمتر است. ساده و بدون شعار.</p>
+      </div>
+      <div class="gs-item"><b class="num">{{ sold_count|fa }}</b><span>اسباب‌بازی دوباره استفاده شد</span></div>
+      <div class="gs-item"><b class="num">{{ user_count|fa }}</b><span>خانوادهٔ عضو</span></div>
+      <div class="gs-item"><b class="num">۰</b><span>هزینه برای فروشنده</span></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-head"><h2>چطور کار می‌کند؟</h2></div>
+    <div class="how-grid">
+      <div class="how-step">
+        <div class="hs-n num">۱</div>
+        <h4>آگهی بگذارید یا بگردید</h4>
+        <p>با شمارهٔ موبایل وارد شوید، چند عکس بگیرید و مشخصات اسباب‌بازی را پر کنید. ثبت آگهی رایگان است.</p>
+      </div>
+      <div class="how-step">
+        <div class="hs-n num">۲</div>
+        <h4>بررسی پیش از انتشار</h4>
+        <p>هر آگهی را بررسی می‌کنیم؛ معمولاً تا {{ MODERATION_SLA_HOURS|fa }} ساعت بعد منتشر می‌شود. عکس کودکان و کالای ناایمن منتشر نمی‌شود.</p>
+      </div>
+      <div class="how-step">
+        <div class="hs-n num">۳</div>
+        <h4>خودتان هماهنگ کنید</h4>
+        <p>با چت یا تلفن با فروشنده حرف بزنید و در یک جای عمومی در محله قرار بگذارید. وندرکیدز در پرداخت و ارسال دخالتی ندارد.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="notice notice-info" style="margin-top:22px">
+    <span class="ni" aria-hidden="true">🛡️</span>
+    <div><b>وندرکیدز واسطهٔ معامله نیست.</b> پرداخت و تحویل بین خریدار و فروشنده انجام می‌شود. قبل از دیدن کالا هیچ مبلغی — حتی بیعانه — واریز نکنید.</div>
+  </div>
+</main>
+{% endblock %}

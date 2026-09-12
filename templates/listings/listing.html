@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}{{ listing.title }} | وندرکیدز{% endblock %}
+{% block meta_description %}{{ listing.title }} — {{ listing.get_condition_display }}، {{ listing.get_age_range_display }}، {{ listing.price|price }} تومان در {{ listing.district.name }}. {{ listing.description|truncatechars:120 }}{% endblock %}
+{% block head_extra %}
+<meta property="og:title" content="{{ listing.title }}">
+<meta property="og:type" content="product">
+{% if images %}<meta property="og:image" content="{{ SITE_URL }}{{ images.0.image.url }}">{% endif %}
+<script type="application/ld+json">{{ jsonld|safe }}</script>
+{% endblock %}
+{% block body_class %}has-sticky{% endblock %}
+{% block content %}
+<div class="wrap">
+  <nav class="crumb">
+    <a href="{% url 'listings:home' %}">خانه</a><span class="sepc">›</span>
+    <a href="{% url 'listings:search' %}">اسباب‌بازی کودک</a><span class="sepc">›</span>
+    {% if listing.category.parent %}<a href="{{ listing.category.parent.get_absolute_url }}">{{ listing.category.parent.name }}</a><span class="sepc">›</span>{% endif %}
+    <a href="{{ listing.category.get_absolute_url }}">{{ listing.category.name }}</a><span class="sepc">›</span>
+    <span>{{ listing.title|truncatechars:40 }}</span>
+  </nav>
+</div>
+
+{% if not listing.is_live %}
+<div class="wrap" style="margin-top:8px">
+  <div class="notice notice-warn">
+    <span class="ni" aria-hidden="true">👁️</span>
+    <div><b>این آگهی منتشر نیست</b> (وضعیت: {{ listing.get_status_display }}). فقط شما و اپراتور آن را می‌بینید.
+      {% if listing.reject_reason %}<br>دلیل رد: <span style="color:var(--red-600)">{{ listing.reject_reason }}</span>{% if listing.reject_note %} — {{ listing.reject_note }}{% endif %}{% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="wrap detail-layout">
+  <main>
+    <div class="gallery">
+      <div class="ph {{ listing.ph_class }}{% if images %} has-img{% endif %}" data-galmain>
+        {% if images %}<img src="{{ images.0.image.url }}" alt="{{ listing.title }}" width="{{ images.0.width }}" height="{{ images.0.height }}">{% endif %}
+        <span aria-hidden="true">{{ listing.emoji }}</span>
+        <span class="ph-count num">۱/{{ images|length|fa }}</span>
+      </div>
+      {% if images|length > 1 %}
+      <div class="gal-thumbs">
+        {% for im in images %}
+        <button class="gt{% if forloop.first %} is-on{% endif %}" type="button" data-gal="{{ im.image.url }}" data-galidx="{{ forloop.counter|fa }}/{{ images|length|fa }}" aria-label="عکس {{ forloop.counter|fa }}"><span class="ph {{ listing.ph_class }} has-img"><img src="{{ im.thumb_url }}" alt=""></span></button>
+        {% endfor %}
+        <div style="margin-right:auto;align-self:center;font-size:11.5px;color:var(--ink-3);padding-left:6px">عکس‌ها طبق چک‌لیست وضعیت گرفته شده‌اند</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="panel panel-pad" style="margin-top:14px">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <h1 class="dt-title">{{ listing.title }}</h1>
+          <div class="dt-meta">
+            <span>{{ listing.published_at|default:listing.created_at|ago }} در {{ listing.city.name }}، {{ listing.district.name }}{% if listing.meetup_hint %}، {{ listing.meetup_hint|truncatechars:30 }}{% endif %}</span>
+            <span aria-hidden="true">·</span>
+            <span class="num">کد آگهی: {{ listing.code|fa }}</span>
+          </div>
+        </div>
+        {% if user.is_authenticated %}
+          {% include "listings/_save_button.html" %}
+        {% else %}
+          <a class="btn btn-ghost btn-sm" href="{% url 'accounts:login' %}?next={{ listing.get_absolute_url }}" title="ذخیره"><span aria-hidden="true">♡</span> ذخیره</a>
+        {% endif %}
+      </div>
+
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
+        <span class="badge {{ listing.condition_badge }}">{{ listing.get_condition_display }}</span>
+        {% if listing.owner.is_official %}<span class="badge badge-official">✦ فروشگاه وندرکیدز</span>{% endif %}
+        {% if listing.owner.is_verified %}<span class="badge badge-verified">فروشندهٔ تأییدشده</span>{% endif %}
+        {% if listing.is_complete and not listing.missing_parts %}<span class="badge badge-live">همهٔ قطعات موجود</span>{% endif %}
+      </div>
+
+      <hr>
+
+      <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
+        <div>
+          <div class="hint" style="margin:0">قیمت پیشنهادی فروشنده</div>
+          <div class="dt-price num">{{ listing.price|price }} <small>تومان</small></div>
+        </div>
+        {% if listing.percent_off %}
+        <div class="dt-orig" style="margin-bottom:6px">
+          قیمت نو در بازار: <s class="num">{{ listing.original_price|price }}</s> تومان — <b style="color:var(--green-600)">{{ listing|pct_off }}٪ ارزان‌تر</b>
+        </div>
+        {% endif %}
+        {% if listing.is_negotiable %}<span class="badge badge-used" style="margin-bottom:8px;margin-right:auto">قابل مذاکره</span>{% endif %}
+      </div>
+    </div>
+
+    <div class="panel panel-pad" style="margin-top:14px">
+      <h2 style="font-size:16px;margin-bottom:6px">مشخصات</h2>
+      <table class="attr-table">
+        <tbody>
+          <tr><th>ردهٔ سنی</th><td>{{ listing.get_age_range_display }}</td></tr>
+          <tr><th>دسته‌بندی</th><td>{{ listing.category.full_name }}</td></tr>
+          <tr><th>وضعیت</th><td>{{ listing.get_condition_display }}{% if listing.condition == 'likenew' %} <span class="hint" style="display:inline;margin:0">(کمتر از ۶ ماه استفاده شده)</span>{% endif %}</td></tr>
+          <tr><th>کامل بودن</th><td>{{ listing.completeness_text }}</td></tr>
+          {% if listing.brand %}<tr><th>برند</th><td>{{ listing.brand.name }}</td></tr>{% endif %}
+          <tr><th>جعبه و دفترچه</th><td>{% if listing.has_box and listing.has_manual %}جعبهٔ اصلی و دفترچهٔ راهنما موجود است{% elif listing.has_box %}جعبهٔ اصلی دارد{% elif listing.has_manual %}دفترچهٔ راهنما دارد{% else %}ندارد{% endif %}</td></tr>
+          {% if listing.original_price %}<tr><th>قیمت نو (تقریبی)</th><td class="num">{{ listing.original_price|price }} تومان</td></tr>{% endif %}
+          <tr><th>باتری / برق</th><td>{% if listing.has_battery %}باتری یا شارژر همراه است{% else %}ندارد{% endif %}</td></tr>
+          <tr><th>یادداشت بهداشتی</th><td>{{ listing.hygiene_note }}</td></tr>
+          <tr><th>محله</th><td>{{ listing.district.name }}{% if listing.meetup_hint %}، نزدیک {{ listing.meetup_hint }}{% endif %}</td></tr>
+          <tr><th>نوع آگهی</th><td>{{ listing.get_type_display }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel panel-pad" style="margin-top:14px">
+      <h2 style="font-size:16px;margin-bottom:8px">توضیحات</h2>
+      {{ listing.description|linebreaks }}
+    </div>
+
+    <div class="panel panel-pad" style="margin-top:14px;border-color:var(--amber-200);background:var(--amber-50)">
+      <h2 style="font-size:15px;margin-bottom:4px;color:var(--amber-700)">
+        <span aria-hidden="true">⚠️</span> قبل از معامله — نکات ایمنی {{ listing.category.root.name }}
+      </h2>
+      <div class="hint" style="margin-bottom:8px;color:var(--amber-700)">این نکات بر اساس دستهٔ «{{ listing.category.root.name }}» نمایش داده می‌شود.</div>
+      <ul class="safety-list">
+        {% for icon, txt in tips %}
+        <li><span class="sl-i" aria-hidden="true">{{ icon }}</span><span>{{ txt|safe }}</span></li>
+        {% empty %}
+        <li><span class="sl-i" aria-hidden="true">📍</span><span><b>جای عمومی قرار بگذارید.</b> پارک، کافه یا لابی ساختمان. به خانهٔ فروشنده یا خریدار نروید.</span></li>
+        <li><span class="sl-i" aria-hidden="true">💳</span><span><b>هیچ مبلغی از قبل واریز نکنید.</b> نه بیعانه، نه «کارت به کارت برای رزرو». پول را موقع تحویل و بعد از دیدن کالا بدهید.</span></li>
+        <li><span class="sl-i" aria-hidden="true">🔎</span><span><b>کالا را همان‌جا وارسی کنید.</b></span></li>
+        <li><span class="sl-i" aria-hidden="true">🧼</span><span><b>قبل از دادن به کودک بشویید.</b> حتی وقتی فروشنده نوشته شسته شده.</span></li>
+        {% endfor %}
+      </ul>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap" x-data="{open:false}">
+        <a class="btn btn-ghost btn-sm" href="{% url 'listings:page' 'safety' %}">راهنمای کامل خرید امن</a>
+        {% if user.is_authenticated %}
+        <button class="btn btn-danger btn-sm" type="button" @click="open=!open"><span aria-hidden="true">⚑</span> گزارش این آگهی</button>
+        {% else %}
+        <a class="btn btn-danger btn-sm" href="{% url 'accounts:login' %}?next={{ listing.get_absolute_url }}"><span aria-hidden="true">⚑</span> گزارش این آگهی</a>
+        {% endif %}
+        <form x-show="open" x-cloak method="post" action="{% url 'listings:report' listing.code %}" style="flex-basis:100%;margin-top:8px">{% csrf_token %}
+          <label class="label">دلیل گزارش</label>
+          <select class="select" name="reason" style="margin-bottom:8px">{% for k, v in report_form.fields.reason.choices %}{% if k %}<option value="{{ k }}">{{ v }}</option>{% endif %}{% endfor %}</select>
+          <textarea class="textarea" name="note" style="min-height:64px" placeholder="توضیح (اختیاری)"></textarea>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button class="btn btn-danger btn-sm" type="submit">ارسال گزارش</button>
+            <button class="btn btn-quiet btn-sm" type="button" @click="open=false">انصراف</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="hint" style="text-align:center;margin-top:12px">وندرکیدز واسطهٔ معامله نیست و مسئولیت کیفیت کالا و نحوهٔ پرداخت با طرفین است.</div>
+
+    {% if related %}
+    <section class="sec">
+      <div class="sec-head">
+        <div><h2>آگهی‌های مشابه</h2><div class="sec-sub">{{ listing.category.root.name }}، همین شهر</div></div>
+        <a class="more" href="{{ listing.category.root.get_absolute_url }}">دیدن همه ←</a>
+      </div>
+      <div class="rail">
+        {% for listing in related %}{% include "partials/card.html" %}{% endfor %}
+      </div>
+    </section>
+    {% endif %}
+  </main>
+
+  <aside class="contact-box">
+    <div class="panel panel-pad">
+      <div class="seller-card">
+        <div class="avatar{% if listing.owner.is_official %} official{% endif %}" aria-hidden="true">{% if listing.owner.is_official %}✦{% else %}{{ listing.owner.initial }}{% endif %}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:14.5px">{{ listing.owner.name }}</div>
+          <div class="hint" style="margin:0">{% if listing.owner.is_official %}حساب رسمی پلتفرم{% elif listing.owner.is_pro %}فروشندهٔ حرفه‌ای{% else %}والد{% if listing.owner.is_verified %} تأییدشده{% endif %}{% endif %} · عضو از {{ listing.owner.date_joined|jmonth }}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+        {% if listing.owner.is_verified %}<span class="badge badge-verified">✓ شمارهٔ تأییدشده</span>{% endif %}
+        {% if listing.owner.is_official %}<span class="badge badge-official">✦ فروشگاه رسمی</span>{% endif %}
+      </div>
+      <div style="display:flex;gap:14px;margin-top:12px;font-size:12.5px;color:var(--ink-3)">
+        <div><b class="num" style="display:block;font-size:15px;color:var(--ink)">{{ owner_active|fa }}</b> آگهی فعال</div>
+        <div><b class="num" style="display:block;font-size:15px;color:var(--ink)">{{ owner_sold|fa }}</b> فروش موفق</div>
+      </div>
+      <a class="btn btn-ghost btn-sm btn-block" style="margin-top:12px" href="{% url 'accounts:public_profile' listing.owner.pk %}">دیدن همهٔ آگهی‌های این فروشنده</a>
+    </div>
+
+    <div class="panel panel-pad" style="margin-top:12px">
+      {% if is_owner and listing.owner == user %}
+        <div class="contact-actions">
+          <a class="btn btn-primary" href="{% url 'listings:edit' listing.code %}">ویرایش آگهی</a>
+          {% if listing.is_live %}<form method="post" action="{% url 'listings:mark_sold' listing.code %}">{% csrf_token %}<button class="btn btn-soft btn-block" type="submit">فروخته شد</button></form>{% endif %}
+        </div>
+      {% else %}
+        <div class="contact-actions">
+          {% if user.is_authenticated %}
+            {% if listing.allow_phone %}
+            <button class="btn btn-primary" type="button" hx-post="{% url 'listings:reveal' listing.code %}" hx-target="#phonebox" hx-swap="outerHTML" {% if revealed %}hx-trigger="load"{% endif %}>
+              <span aria-hidden="true">📞</span> اطلاعات تماس
+            </button>
+            {% else %}
+            <button class="btn btn-primary is-disabled" type="button" disabled><span aria-hidden="true">📞</span> بدون نمایش شماره</button>
+            {% endif %}
+          {% else %}
+            <a class="btn btn-primary" href="{% url 'accounts:login' %}?next={{ listing.get_absolute_url }}"><span aria-hidden="true">📞</span> اطلاعات تماس</a>
+          {% endif %}
+          {% if listing.allow_chat %}
+            {% if user.is_authenticated %}<a class="btn btn-action" href="{% url 'chat:start' listing.code %}"><span aria-hidden="true">💬</span> چت</a>
+            {% else %}<a class="btn btn-action" href="{% url 'accounts:login' %}?next={% url 'chat:start' listing.code %}"><span aria-hidden="true">💬</span> چت</a>{% endif %}
+          {% endif %}
+        </div>
+        <div class="phone-reveal" id="phonebox"></div>
+        {% if not user.is_authenticated %}
+        <div class="hint" style="margin-top:10px;display:flex;gap:6px;align-items:flex-start">
+          <span aria-hidden="true">🔒</span>
+          <span>برای دیدن شماره یا شروع چت باید با شمارهٔ موبایل وارد شوید. <a href="{% url 'accounts:login' %}?next={{ listing.get_absolute_url }}" style="color:var(--teal-700);font-weight:600">ورود</a></span>
+        </div>
+        {% endif %}
+      {% endif %}
+      <hr>
+      <div class="hint" style="display:flex;justify-content:space-between">
+        <span>بازدید این آگهی</span>
+        <span><b class="num">{{ listing.views_count|fa }}</b> بار · <b class="num">{{ listing.reveals_count|fa }}</b> بار نمایش شماره</span>
+      </div>
+    </div>
+
+    {% if listing.meetup_hint %}
+    <div class="panel panel-pad" style="margin-top:12px;background:var(--teal-50);border-color:var(--teal-100)">
+      <div style="font-size:13px;font-weight:700;color:var(--teal-800);margin-bottom:6px"><span aria-hidden="true">🤝</span> پیشنهاد وندرکیدز برای قرار</div>
+      <div class="hint" style="color:var(--teal-800)">فروشنده «{{ listing.meetup_hint }}» را به‌عنوان محل تحویل پیشنهاد داده است — جای شلوغ و عمومی. ارسال با پیک (اسنپ‌باکس / الوپیک) هم به عهدهٔ خودتان است.</div>
+    </div>
+    {% endif %}
+  </aside>
+</div>
+
+{% if not is_owner or listing.owner != user %}
+<div class="sticky-bar">
+  {% if user.is_authenticated %}
+    {% if listing.allow_phone %}<button class="btn btn-primary" type="button" hx-post="{% url 'listings:reveal' listing.code %}" hx-target="#phonebox" hx-swap="outerHTML" onclick="setTimeout(function(){document.getElementById('phonebox').scrollIntoView({behavior:'smooth',block:'center'})},300)"><span aria-hidden="true">📞</span> اطلاعات تماس</button>{% endif %}
+    {% if listing.allow_chat %}<a class="btn btn-action" href="{% url 'chat:start' listing.code %}"><span aria-hidden="true">💬</span> چت</a>{% endif %}
+  {% else %}
+    <a class="btn btn-primary" href="{% url 'accounts:login' %}?next={{ listing.get_absolute_url }}"><span aria-hidden="true">📞</span> اطلاعات تماس</a>
+    <a class="btn btn-action" href="{% url 'accounts:login' %}?next={{ listing.get_absolute_url }}"><span aria-hidden="true">💬</span> چت</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

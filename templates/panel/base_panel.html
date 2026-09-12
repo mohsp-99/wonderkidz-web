@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block body_class %}adm{% endblock %}
+{% block title %}{% block panel_title %}پنل مدیریت{% endblock %} — وندرکیدز{% endblock %}
+{% block header %}
+{% with un=request.resolver_match.url_name %}
+<header class="adm-hd">
+  <span class="logo-mark" style="width:28px;height:28px;font-size:14px;border-radius:9px" aria-hidden="true">🧸</span>
+  <span class="logo-txt">وندرکیدز</span>
+  <span class="tagm">پنل مدیریت</span>
+  <nav>
+    <a class="{% if un == 'queue' %}is-on{% endif %}" href="{% url 'panel:queue' %}">صف بررسی</a>
+    <a class="{% if un == 'reports' %}is-on{% endif %}" href="{% url 'panel:reports' %}">گزارش‌ها</a>
+    <a class="{% if un == 'users' or un == 'user_detail' %}is-on{% endif %}" href="{% url 'panel:users' %}">کاربران</a>
+    <a class="{% if un == 'listings' %}is-on{% endif %}" href="{% url 'panel:listings' %}">آگهی‌ها</a>
+    <a class="{% if un == 'stats' %}is-on{% endif %}" href="{% url 'panel:stats' %}">آمار</a>
+    <a class="{% if un == 'decisions' %}is-on{% endif %}" href="{% url 'panel:decisions' %}">تصمیم‌ها</a>
+    <a href="/admin/">ادمین جنگو</a>
+  </nav>
+  <span class="who">اپراتور: {{ user.name }} <a href="{% url 'listings:home' %}" style="color:#fff;margin-right:10px">مشاهدهٔ سایت ↗</a></span>
+</header>
+{% endwith %}
+{% endblock %}
+{% block content %}
+<div class="wrap" style="padding-top:18px;padding-bottom:30px">
+{% block panel %}{% endblock %}
+<div class="hint" style="text-align:center;margin-top:18px">پنل داخلی — فقط برای اپراتور وندرکیدز.</div>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}

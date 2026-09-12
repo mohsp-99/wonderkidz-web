@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}درگاه پرداخت آزمایشی | {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div style="width:100%;max-width:420px">
+    <div class="auth-card">
+      <div style="text-align:center;margin-bottom:14px">
+        <span class="logo-mark" style="width:52px;height:52px;font-size:26px;border-radius:16px;display:inline-grid" aria-hidden="true">💳</span>
+      </div>
+      <h1>درگاه پرداخت آزمایشی</h1>
+      <p class="sub">این صفحه جایگزین درگاه واقعی (زرین‌پال / آیدی‌پی) در محیط توسعه است. هیچ مبلغی برداشت نمی‌شود.</p>
+
+      <table class="attr-table" style="margin-bottom:14px">
+        <tbody>
+          <tr><th>خدمت</th><td>{{ payment.plan.name }}</td></tr>
+          <tr><th>مبلغ</th><td class="num">{{ payment.amount|price }} تومان</td></tr>
+          <tr><th>شناسهٔ تراکنش</th><td class="num" dir="ltr">{{ payment.authority }}</td></tr>
+        </tbody>
+      </table>
+
+      <div style="display:flex;gap:8px">
+        <a class="btn btn-primary btn-lg" style="flex:1" href="{% url 'payments:callback' %}?payment={{ payment.pk }}&status=ok">پرداخت موفق</a>
+        <a class="btn btn-ghost btn-lg" style="flex:1" href="{% url 'payments:callback' %}?payment={{ payment.pk }}&status=cancel">انصراف</a>
+      </div>
+    </div>
+    <div class="notice notice-info" style="margin-top:14px">
+      <span class="ni" aria-hidden="true">🔌</span>
+      <div>برای درگاه واقعی، <code>PAYMENT_GATEWAY=zarinpal</code> یا <code>idpay</code> را در <code>.env</code> تنظیم کنید.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

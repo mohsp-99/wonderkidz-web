@@ -1,0 +1,4 @@
+<button class="btn btn-ghost btn-sm" type="button" title="ذخیره" id="save-btn"
+        hx-post="{% url 'listings:save' listing.code %}" hx-target="#save-btn" hx-swap="outerHTML">
+  <span aria-hidden="true">{% if saved %}♥{% else %}♡{% endif %}</span> {% if saved %}ذخیره شد{% else %}ذخیره{% endif %}
+</button>

@@ -1,0 +1,47 @@
+<footer class="ft">
+  <div class="ft-in">
+    <div>
+      <a class="logo" href="{% url 'listings:home' %}"><span class="logo-mark" aria-hidden="true">🧸</span><span class="logo-txt">وندر<em>کیدز</em></span></a>
+      <p class="ft-about">تابلوی آگهی خریدوفروش اسباب‌بازی دست‌دوم کودکان. ما واسطهٔ پرداخت یا ارسال نیستیم؛ اینجا والدین همدیگر را پیدا می‌کنند و معامله را خودشان انجام می‌دهند.</p>
+      <div class="ft-badges">
+        <div class="ft-seal">نماد اعتماد<br>الکترونیکی<br>(جای لوگو)</div>
+        <div class="ft-seal">ساماندهی<br>وزارت ارشاد<br>(جای لوگو)</div>
+      </div>
+    </div>
+    <div>
+      <h4>دسته‌بندی‌ها</h4>
+      <ul>
+        {% for c in nav_categories|slice:":6" %}<li><a href="{{ c.get_absolute_url }}">{{ c.name }}</a></li>{% endfor %}
+      </ul>
+    </div>
+    <div>
+      <h4>وندرکیدز</h4>
+      <ul>
+        <li><a href="{% url 'listings:page' 'about' %}">دربارهٔ ما</a></li>
+        <li><a href="{% url 'listings:page' 'posting-guide' %}">راهنمای ثبت آگهی</a></li>
+        <li><a href="{% url 'listings:page' 'safety' %}">نکات ایمنی خرید</a></li>
+        <li><a href="{% url 'listings:page' 'terms' %}">قوانین و شرایط</a></li>
+        <li><a href="{% url 'listings:page' 'privacy' %}">حریم خصوصی</a></li>
+        <li><a href="{% url 'listings:page' 'faq' %}">سؤالات متداول</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>ارتباط با ما</h4>
+      <ul class="ft-contact">
+        <li><span aria-hidden="true">📞</span> <span class="num" dir="ltr">{{ CONTACT_PHONE|phone }}</span></li>
+        <li><span aria-hidden="true">✉️</span> <span dir="ltr">{{ CONTACT_EMAIL }}</span></li>
+        <li><span aria-hidden="true">📍</span> تهران، آیت‌الله کاشانی</li>
+        <li><span aria-hidden="true">🕘</span> پاسخ‌گویی: شنبه تا چهارشنبه، ۹ تا ۱۷</li>
+      </ul>
+      <div class="ft-social">
+        <span title="واتس‌اپ" aria-hidden="true">💬</span>
+        <span title="اینستاگرام" aria-hidden="true">📷</span>
+        <span title="تلگرام" aria-hidden="true">✈️</span>
+      </div>
+    </div>
+  </div>
+  <div class="ft-bottom">
+    <span>© {% jalali_year %} وندرکیدز — تمامی حقوق محفوظ است.</span>
+    <span>{% if user.is_staff %}<a href="{% url 'panel:queue' %}">پنل مدیریت</a> · {% endif %}<a href="{% url 'sitemap' %}">نقشهٔ سایت</a></span>
+  </div>
+</footer>

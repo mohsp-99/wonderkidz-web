@@ -1,0 +1,52 @@
+{% url 'listings:search' as search_url %}
+<header class="hd">
+  <div class="hd-in">
+    <a class="logo" href="{% url 'listings:home' %}">
+      <span class="logo-mark" aria-hidden="true">🧸</span>
+      <span class="logo-txt">وندر<em>کیدز</em></span>
+    </a>
+
+    <div style="position:relative;flex:none">
+      <button class="city-pill" data-city type="button" aria-haspopup="true">
+        <span aria-hidden="true">📍</span><span class="city-name">{{ current_city.name|default:"تهران" }}</span><span class="caret">▾</span>
+      </button>
+      <div class="panel panel-pad" id="city-panel" hidden style="position:absolute;top:44px;right:0;z-index:80;width:210px;padding:8px">
+        <div style="font-size:12px;color:var(--ink-3);padding:2px 8px 6px">انتخاب شهر</div>
+        {% for c in cities %}
+        <form method="post" action="{% url 'accounts:set_city' %}">{% csrf_token %}<input type="hidden" name="city" value="{{ c.slug }}">
+          <button class="btn btn-quiet btn-block" style="justify-content:flex-start" type="submit" {% if not c.is_active %}disabled{% endif %}>{{ c.name }}{% if not c.is_active %} <span class="badge badge-soon" style="margin-right:auto">به‌زودی</span>{% endif %}</button>
+        </form>
+        {% endfor %}
+      </div>
+    </div>
+
+    <form class="hd-search" action="{{ search_url }}" method="get" role="search">
+      <input class="input" type="search" name="q" value="{{ request.GET.q|default:'' }}" placeholder="جستجو در آگهی‌های اسباب‌بازی…" aria-label="جستجو">
+      <span class="si" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg></span>
+    </form>
+
+    <div class="hd-actions">
+      <a class="hd-link is-secondary{% if request.resolver_match.namespace == 'chat' %} is-here{% endif %}" href="{% url 'chat:inbox' %}"><span aria-hidden="true">💬</span> چت{% if unread_chat_count %} <span class="badge badge-repair num">{{ unread_chat_count|fa }}</span>{% endif %}</a>
+      <a class="hd-link is-secondary{% if request.resolver_match.url_name == 'profile' %} is-here{% endif %}" href="{% url 'accounts:profile' %}"><span aria-hidden="true">👤</span> آگهی‌های من</a>
+      <span class="hd-sep is-secondary" aria-hidden="true"></span>
+      {% if user.is_authenticated %}
+        <a class="hd-link" href="{% url 'accounts:profile' %}"><span aria-hidden="true">👤</span> {{ user.name }}</a>
+      {% else %}
+        <a class="hd-link" href="{% url 'accounts:login' %}?next={{ request.path }}">ورود</a>
+      {% endif %}
+      <a class="btn btn-action" href="{% url 'listings:post' %}"><span aria-hidden="true">＋</span> ثبت آگهی</a>
+      <button class="hd-burger" data-burger type="button" aria-label="منو">☰</button>
+    </div>
+  </div>
+  <nav class="hd-mob" data-mobnav>
+    <a href="{{ search_url }}">همهٔ آگهی‌ها</a>
+    <a href="{% url 'chat:inbox' %}">چت‌های من</a>
+    <a href="{% url 'accounts:profile' %}">آگهی‌های من</a>
+    {% if user.is_authenticated %}
+      <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="btn btn-quiet btn-block" style="justify-content:flex-start">خروج از حساب</button></form>
+      {% if user.is_staff %}<a href="{% url 'panel:queue' %}">پنل مدیریت</a>{% endif %}
+    {% else %}
+      <a href="{% url 'accounts:login' %}">ورود / ثبت‌نام</a>
+    {% endif %}
+  </nav>
+</header>

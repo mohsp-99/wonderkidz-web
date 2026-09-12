@@ -1,0 +1,23 @@
+{% with cover=listing.cover %}
+<a class="card" href="{{ listing.get_absolute_url }}">
+  <div class="ph {{ listing.ph_class }}{% if cover %} has-img{% endif %}">
+    {% if cover %}<img src="{{ cover.thumb_url }}" alt="{{ listing.title }}" loading="lazy">{% endif %}
+    <span aria-hidden="true">{{ listing.emoji }}</span>
+    <span class="ph-count num">۱/{{ listing.image_count|fa }}</span>
+    {% if listing.owner.is_official %}<span class="ph-tag">✦ فروشگاه وندرکیدز</span>{% endif %}
+  </div>
+  <div class="card-body">
+    <h3 class="card-title">{{ listing.title }}</h3>
+    <div class="card-tags">
+      <span class="badge {{ listing.condition_badge }}">{{ listing.get_condition_display }}</span>
+      {% if listing.owner.is_official %}<span class="badge badge-official">وندرکیدز</span>
+      {% elif listing.owner.is_verified %}<span class="badge badge-verified">فروشندهٔ تأییدشده</span>{% endif %}
+    </div>
+    <div class="card-micro"><span><b>{{ listing.get_age_range_display }}</b></span><span>{{ listing.completeness_text }}</span></div>
+    <div class="card-price num">{{ listing.price|price }} <small>تومان</small></div>
+    <div class="card-meta"><span>{{ listing.published_at|default:listing.created_at|ago }} در {{ listing.district.name }}</span>
+      {% if listing.allow_chat %}<span class="chat-i" title="چت فعال"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-5.5A8 8 0 1 1 21 12Z"/></svg></span>{% endif %}
+    </div>
+  </div>
+</a>
+{% endwith %}

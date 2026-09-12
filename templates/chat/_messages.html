@@ -1,0 +1,15 @@
+{% for g in groups %}
+<div class="msg-day"><span>{{ g.label }}</span></div>
+{% for m in g.messages %}
+{% if m.is_system %}
+<div class="msg msg-sys"><div class="msg-b">{{ m.body }}</div></div>
+{% elif m.sender_id == request.user.id %}
+<div class="msg me"><div class="msg-b">{{ m.body }}<span class="msg-t num">{{ m.created_at|hm }}</span></div></div>
+{% else %}
+<div class="msg them"><div class="msg-b">{{ m.body }}<span class="msg-t num">{{ m.created_at|hm }}</span></div></div>
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% if compose_disabled %}
+<div class="msg msg-sys"><div class="msg-b">این گفت‌وگو بسته شده است، ولی تاریخچه‌اش برای هر دو طرف باقی می‌ماند.</div></div>
+{% endif %}

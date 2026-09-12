@@ -1,0 +1,36 @@
+{% extends "panel/base_panel.html" %}
+{% block panel_title %}آمار{% endblock %}
+{% block panel %}
+{% include "panel/_stats_row.html" %}
+<div class="stat-row" style="margin-top:12px">
+  <div class="stat"><div class="s-l">کل کاربران</div><div class="s-v num">{{ total_users|fa }}</div><div class="s-d flat">{{ verified_users|fa }} تأییدشده</div></div>
+  {% for label, n in per_status %}<div class="stat"><div class="s-l">{{ label }}</div><div class="s-v num">{{ n|fa }}</div></div>{% endfor %}
+</div>
+<div class="form-2col" style="margin-top:14px">
+  <div class="panel" style="overflow:hidden;padding:0">
+    <table class="adm-table">
+      <thead><tr><th>هفته (از شنبه)</th><th>ثبت‌نام</th></tr></thead>
+      <tbody>{% for ws, n in signups %}<tr><td>{{ ws|jalali:"%d %B" }}</td><td class="num">{{ n|fa }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  <div class="panel" style="overflow:hidden;padding:0">
+    <table class="adm-table">
+      <thead><tr><th>هفته</th><th>تماس</th><th>چت</th><th>نمایش شماره</th><th>انتشار</th></tr></thead>
+      <tbody>{% for ws, total, c, r, p in contacts %}<tr><td>{{ ws|jalali:"%d %B" }}</td><td class="num"><b>{{ total|fa }}</b></td><td class="num">{{ c|fa }}</td><td class="num">{{ r|fa }}</td><td class="num">{{ p|fa }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  <div class="panel" style="overflow:hidden;padding:0">
+    <table class="adm-table">
+      <thead><tr><th>دسته (آگهی فعال)</th><th>تعداد</th></tr></thead>
+      <tbody>{% for row in top_categories %}<tr><td>{{ row.name }}</td><td class="num">{{ row.n|fa }}</td></tr>{% empty %}<tr><td colspan="2" class="hint">—</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  <div class="panel" style="overflow:hidden;padding:0">
+    <table class="adm-table">
+      <thead><tr><th>محله (آگهی فعال)</th><th>تعداد</th></tr></thead>
+      <tbody>{% for row in top_districts %}<tr><td>{{ row.name }}</td><td class="num">{{ row.n|fa }}</td></tr>{% empty %}<tr><td colspan="2" class="hint">—</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</div>
+<div class="hint" style="margin-top:10px">معیار «v1 کار می‌کند»: ۲۰۰ آگهی فعال و ۵۰ تماس در هفته.</div>
+{% endblock %}

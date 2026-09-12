@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}پلن‌ها و خدمات | {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap" style="max-width:820px">
+  <div style="margin:20px 0 14px">
+    <h1 style="font-size:20px">خدمات و پلن‌ها</h1>
+    <div class="sec-sub">ثبت آگهی در وندرکیدز رایگان است. این بخش برای خدمات اختیاری است.</div>
+  </div>
+
+  {% if not plans %}
+  <div class="notice notice-green">
+    <span class="ni" aria-hidden="true">✅</span>
+    <div><b>در حال حاضر هیچ هزینه‌ای برای فروشنده وجود ندارد.</b> نه اشتراک، نه کارمزد فروش. درگاه پرداخت آماده است و هر وقت خدمتی فعال شود همین‌جا نمایش داده می‌شود.</div>
+  </div>
+  {% else %}
+  {% if listing %}
+  <div class="notice notice-info" style="margin-bottom:14px">
+    <span class="ni" aria-hidden="true">🏷️</span>
+    <div>خدمت برای آگهی <b>«{{ listing.title }}»</b> فعال می‌شود.</div>
+  </div>
+  {% endif %}
+  <div class="grid-cards">
+    {% for p in plans %}
+    <div class="panel panel-pad" style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span aria-hidden="true" style="font-size:22px">{% if p.kind == 'promote' %}🪜{% elif p.kind == 'subscription' %}⭐{% else %}🏅{% endif %}</span>
+        <b style="font-size:15px">{{ p.name }}</b>
+      </div>
+      <div class="hint" style="margin:0">{{ p.description|default:p.get_kind_display }}</div>
+      <div class="card-price num">{{ p.price|price }} <small>تومان</small></div>
+      <div class="hint" style="margin:0">مدت: <b class="num">{{ p.duration_days|fa }}</b> روز</div>
+      <form method="post" action="{% url 'payments:start' p.pk %}" style="margin-top:auto">
+        {% csrf_token %}
+        {% if listing %}<input type="hidden" name="listing" value="{{ listing.code }}">{% endif %}
+        <button class="btn btn-primary btn-block" type="submit">پرداخت و فعال‌سازی</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="hint" style="text-align:center;margin:18px 0 30px">
+    پرداخت از طریق درگاه رسمی انجام می‌شود و وندرکیدز اطلاعات کارت شما را نگه نمی‌دارد.
+    <a href="{% url 'accounts:profile' %}" style="color:var(--teal-700)">بازگشت به آگهی‌های من</a>
+  </div>
+</div>
+{% endblock %}

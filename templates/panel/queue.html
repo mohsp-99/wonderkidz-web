@@ -1,0 +1,94 @@
+{% extends "panel/base_panel.html" %}
+{% block panel_title %}صف بررسی{% endblock %}
+{% block panel %}
+{% include "panel/_stats_row.html" %}
+
+<div class="panel" style="margin-top:16px;padding:0;overflow:hidden">
+  <div class="tabs" style="padding:0 8px">
+    <a class="tab is-on" href="{% url 'panel:queue' %}">صف بررسی <span class="cnt num">{{ items|length|fa }}</span></a>
+    <a class="tab" href="{% url 'panel:reports' %}">گزارش‌های کاربران <span class="cnt num">{{ stats.open_reports|fa }}</span></a>
+    <a class="tab" href="{% url 'panel:decisions' %}">تصمیم‌های امروز <span class="cnt num">{{ stats.decisions_today|fa }}</span></a>
+  </div>
+  <div style="padding:16px;background:#f4f6f8">
+    <div class="notice notice-info" style="margin-bottom:14px">
+      <span class="ni" aria-hidden="true">🤖</span>
+      <div>بررسی خودکار اول انجام شده است؛ موارد بدون هشدار با یک کلیک تأیید می‌شوند و فقط پرچم‌دارها به بررسی دستی نیاز دارند.</div>
+    </div>
+
+    {% for it in items %}{% with l=it.l %}
+    <article class="q-item{% if it.flags %} flagged{% endif %}" id="q-{{ l.pk }}" x-data="{ rej: false }">
+      <div class="q-thumb">
+        {% with cover=l.cover %}
+        <span class="ph {{ l.ph_class }}{% if cover %} has-img{% endif %}">{% if cover %}<img src="{{ cover.thumb_url }}" alt="">{% else %}<span aria-hidden="true">{{ l.emoji }}</span>{% endif %}</span>
+        {% endwith %}
+        {% if l.images.all|length > 1 %}
+        <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
+          {% for im in l.images.all %}<a href="{{ im.image.url }}" target="_blank" rel="noopener"><img src="{{ im.thumb_url }}" alt="" style="width:28px;height:28px;object-fit:cover;border-radius:5px;border:1px solid var(--line)"></a>{% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+          <b style="font-size:14.5px"><a href="{{ l.get_absolute_url }}" target="_blank" rel="noopener">{{ l.title }}</a></b>
+          {% if it.flags %}<span class="badge badge-repair">هشدار خودکار</span>{% else %}<span class="badge badge-live">بدون هشدار</span>{% endif %}
+          <span class="badge badge-pending">{{ it.wait_minutes|fa }} دقیقه در صف</span>
+          <span class="hint" style="margin:0">کد {{ l.code|fa }}</span>
+        </div>
+        <div class="q-fields">
+          <span>فروشنده: <b><a href="{% url 'panel:user_detail' l.owner.pk %}">{{ l.owner.name }}</a></b> ({% if l.owner.is_verified %}تأییدشده{% else %}تأییدنشده{% endif %}، {{ l.owner.listings.count|fa }} آگهی{% if l.owner.sold_count %}، {{ l.owner.sold_count|fa }} فروش{% endif %}{% if l.owner.warnings_count %}، {{ l.owner.warnings_count|fa }} اخطار{% endif %})</span>
+          <span>قیمت: <b class="num">{% if l.price %}{{ l.price|price }} تومان{% else %}—{% endif %}</b></span>
+          <span>دسته: <b>{{ l.category.full_name }}</b></span>
+          <span>محله: <b>{{ l.district.name }}</b></span>
+          <span>سن: <b>{{ l.get_age_range_display }}</b></span>
+          <span>وضعیت: <b>{{ l.get_condition_display }}</b></span>
+          <span>عکس‌ها: <b class="num">{{ l.images.all|length|fa }}</b></span>
+          <span>بهداشتی: <b>{% if l.hygiene_note %}«{{ l.hygiene_note|truncatechars:60 }}»{% else %}خالی{% endif %}</b></span>
+          {% if l.brand %}<span>برند: <b>{{ l.brand.name }}</b></span>{% endif %}
+          {% if l.original_price %}<span>قیمت نو: <b class="num">{{ l.original_price|price }} تومان</b></span>{% endif %}
+        </div>
+        {% for f in it.flags %}
+        <div class="notice {% if f.level == 'red' or f.level == 'high' %}notice-red{% else %}notice-warn{% endif %}" style="margin-top:10px">
+          <span class="ni" aria-hidden="true">{% if f.level == 'red' or f.level == 'high' %}⚠️{% else %}💸{% endif %}</span>
+          <div><b>هشدار تشخیص خودکار:</b> {{ f.text }}</div>
+        </div>
+        {% endfor %}
+        <details style="margin-top:8px">
+          <summary style="font-size:12.5px;color:var(--teal-700);cursor:pointer">دیدن توضیحات آگهی</summary>
+          <p class="hint" style="margin-top:6px;white-space:pre-wrap">{{ l.description }}</p>
+          {% if l.meetup_hint %}<p class="hint">محل تحویل پیشنهادی: {{ l.meetup_hint }}</p>{% endif %}
+        </details>
+      </div>
+      <div class="q-side">
+        <h5>چک‌لیست بررسی</h5>
+        <ul class="q-check">
+          {% for icon, label in it.checklist %}<li><span aria-hidden="true">{{ icon }}</span> {{ label }}</li>{% endfor %}
+        </ul>
+        <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap" id="slot-{{ l.pk }}">
+          <button class="btn btn-primary btn-sm" type="button" hx-post="{% url 'panel:approve' l.pk %}" hx-target="#slot-{{ l.pk }}" hx-swap="innerHTML" hx-on::after-request="document.getElementById('q-{{ l.pk }}').style.opacity='.35'">تأیید و انتشار</button>
+          <button class="btn btn-danger btn-sm" type="button" @click="rej = !rej">رد کردن</button>
+          <a class="btn btn-ghost btn-sm" href="{% url 'panel:user_detail' l.owner.pk %}">فروشنده</a>
+        </div>
+        <form class="reject-box" :class="{ 'is-on': rej }" hx-post="{% url 'panel:reject' l.pk %}" hx-target="#slot-{{ l.pk }}" hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful){document.getElementById('q-{{ l.pk }}').style.opacity='.35'; rej=false}">
+          {% csrf_token %}
+          <label class="label" style="margin-top:10px">دلیل رد (برای فروشنده پیامک می‌شود)</label>
+          <select class="select" name="reason" style="margin-bottom:8px">
+            {% for r in reject_reasons %}<option {% if it.flags and forloop.first %}selected{% endif %}>{{ r }}</option>{% endfor %}
+          </select>
+          <textarea class="textarea" name="note" style="min-height:64px" placeholder="توضیح دلخواه برای فروشنده…"></textarea>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button class="btn btn-danger btn-sm" type="submit">ارسال رد</button>
+            <button class="btn btn-quiet btn-sm" type="button" @click="rej = false">انصراف</button>
+          </div>
+        </form>
+      </div>
+    </article>
+    {% endwith %}{% empty %}
+    <div class="empty" style="padding:36px">
+      <span class="e-icon" aria-hidden="true">🎉</span>
+      صف بررسی خالی است.
+    </div>
+    {% endfor %}
+    {% if items %}<div class="hint" style="text-align:center;margin-top:6px">{{ items|length|fa }} مورد در صف.</div>{% endif %}
+  </div>
+</div>
+{% endblock %}

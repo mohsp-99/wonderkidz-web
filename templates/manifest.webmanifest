@@ -1,0 +1,12 @@
+{
+  "name": "وندرکیدز",
+  "short_name": "وندرکیدز",
+  "description": "خرید و فروش اسباب‌بازی دست‌دوم کودکان",
+  "start_url": "/",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "fa",
+  "background_color": "#f3f6f4",
+  "theme_color": "#0f6b62",
+  "icons": [{"src": "/static/img/favicon.svg", "sizes": "any", "type": "image/svg+xml"}]
+}

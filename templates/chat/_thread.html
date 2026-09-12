@@ -1,0 +1,76 @@
+<section class="chat-thread" x-data="{ report: false }">
+  <div class="ct-head">
+    <div class="ci-thumb">
+      {% with cover=listing.cover %}
+      <span class="ph {{ listing.ph_class }}{% if cover %} has-img{% endif %}">
+        {% if cover %}<img src="{{ cover.thumb_url }}" alt="">{% else %}<span aria-hidden="true">{{ listing.emoji }}</span>{% endif %}
+      </span>
+      {% endwith %}
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <b style="font-size:14px">{{ other.name }}</b>
+        {% if listing.status == 'sold' %}
+          <span class="badge badge-sold">آگهی فروخته شد</span>
+        {% elif other.is_verified %}
+          <span class="badge badge-verified">✓ والد تأییدشده</span>
+        {% endif %}
+      </div>
+      <a class="hint" href="{{ listing.get_absolute_url }}" style="color:var(--teal-700)">{{ listing.title }}{% if listing.price %} — <span class="num">{{ listing.price|price }}</span> تومان{% endif %}</a>
+    </div>
+    {% if listing.allow_phone and listing.status != 'sold' and request.user.id == conv.buyer_id %}
+    <a class="btn btn-ghost btn-sm" href="{{ listing.get_absolute_url }}#phonebox"><span aria-hidden="true">📞</span> اطلاعات تماس</a>
+    {% endif %}
+    <button class="btn btn-quiet btn-sm" type="button" title="گزارش" aria-label="گزارش گفت‌وگو" @click="report = !report"><span aria-hidden="true">⚑</span></button>
+  </div>
+
+  <form x-cloak x-show="report" method="post" action="{% url 'listings:report' listing.code %}" style="padding:10px 16px;border-bottom:1px solid var(--line);background:var(--amber-50);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    {% csrf_token %}
+    <input type="hidden" name="conversation" value="{{ conv.pk }}">
+    <select class="select" name="reason" style="flex:1;min-width:180px">
+      {% for val, label in report_reasons %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+    </select>
+    <input class="input" name="note" placeholder="توضیح (اختیاری)" style="flex:2;min-width:180px">
+    <button class="btn btn-danger btn-sm" type="submit">ارسال گزارش</button>
+    <button class="btn btn-quiet btn-sm" type="button" @click="report = false">انصراف</button>
+  </form>
+
+  {% if listing.status == 'sold' %}
+  <div class="ct-safety">
+    <span aria-hidden="true">✅</span>
+    <span>این آگهی فروخته شده است. اگر معامله انجام شد، خوشحال می‌شویم بازخوردتان را بدهید.</span>
+  </div>
+  {% else %}
+  <div class="ct-safety">
+    <span aria-hidden="true">🛡️</span>
+    <span>قبل از دیدن کالا هیچ مبلغی واریز نکنید و در جای عمومی قرار بگذارید. وندرکیدز واسطهٔ پرداخت نیست.</span>
+  </div>
+  {% endif %}
+
+  <div class="ct-msgs" id="ct-msgs" hx-get="{% url 'chat:messages' conv.pk %}" hx-trigger="every 4s" hx-swap="innerHTML">
+    {% include "chat/_messages.html" %}
+  </div>
+
+  {% if compose_disabled %}
+  <div style="padding:14px 16px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    {% if my_feedback == 'good' %}
+      <span class="hint" style="margin:0">👍 بازخورد شما ثبت شد: معامله خوب بود.</span>
+    {% elif my_feedback == 'bad' %}
+      <span class="hint" style="margin:0">👎 بازخورد شما ثبت شد: مشکلی پیش آمد.</span>
+    {% else %}
+      <span class="hint" style="margin:0">معامله انجام شد؟</span>
+      <form method="post" action="{% url 'chat:feedback' conv.pk %}" style="display:contents">{% csrf_token %}
+        <button class="btn btn-soft btn-sm" type="submit" name="value" value="good">👍 بله، خوب بود</button>
+        <button class="btn btn-ghost btn-sm" type="submit" name="value" value="bad">👎 مشکلی پیش آمد</button>
+      </form>
+    {% endif %}
+  </div>
+  {% else %}
+  <form class="ct-compose" hx-post="{% url 'chat:send' conv.pk %}" hx-target="#ct-msgs" hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) this.reset()">
+    {% csrf_token %}
+    <input class="input" name="body" maxlength="2000" autocomplete="off" placeholder="پیامتان را بنویسید…" aria-label="متن پیام" required>
+    <button class="btn btn-primary btn-sm" type="submit">ارسال</button>
+  </form>
+  <div class="hint" style="padding:0 16px 10px">پیام‌ها هر چند ثانیه یک‌بار به‌روزرسانی می‌شوند.</div>
+  {% endif %}
+</section>

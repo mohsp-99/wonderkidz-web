@@ -1,0 +1,36 @@
+{% extends "panel/base_panel.html" %}
+{% block panel_title %}کاربران{% endblock %}
+{% block panel %}
+<div class="panel panel-pad" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+  <form method="get" style="display:flex;gap:8px;flex:1;min-width:260px">
+    <input class="input" type="search" name="q" value="{{ q }}" placeholder="جستجو با شماره یا نام…">
+    <button class="btn btn-primary btn-sm" type="submit">جستجو</button>
+  </form>
+  <div style="display:flex;gap:6px">
+    <a class="chip{% if not f %} is-on{% endif %}" href="{% url 'panel:users' %}?q={{ q }}">همه</a>
+    <a class="chip{% if f == 'banned' %} is-on{% endif %}" href="{% url 'panel:users' %}?f=banned&q={{ q }}">مسدود</a>
+    <a class="chip{% if f == 'staff' %} is-on{% endif %}" href="{% url 'panel:users' %}?f=staff&q={{ q }}">اپراتورها</a>
+  </div>
+</div>
+<div class="panel" style="margin-top:12px;overflow:hidden;padding:0;overflow-x:auto">
+  <table class="adm-table">
+    <thead><tr><th>نام</th><th>شماره</th><th>نوع</th><th>تأیید</th><th>آگهی (فعال)</th><th>اخطار</th><th>وضعیت</th><th>عضویت</th></tr></thead>
+    <tbody>
+    {% for u in users %}
+      <tr>
+        <td><a href="{% url 'panel:user_detail' u.pk %}" style="color:var(--teal-700);font-weight:600">{{ u.name }}</a>{% if u.is_staff %} <span class="badge badge-official">اپراتور</span>{% endif %}</td>
+        <td class="num" dir="ltr" style="text-align:right">{{ u.phone|phone }}</td>
+        <td>{{ u.get_account_type_display }}</td>
+        <td>{% if u.is_verified %}<span class="badge badge-verified">✓</span>{% else %}—{% endif %}</td>
+        <td class="num">{{ u.n_listings|fa }} ({{ u.n_live|fa }})</td>
+        <td class="num">{{ u.warnings_count|fa }}</td>
+        <td>{% if u.is_banned %}<span class="badge badge-sold">مسدود</span>{% else %}<span class="badge badge-live">فعال</span>{% endif %}</td>
+        <td>{{ u.date_joined|jalali }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="8" class="hint" style="text-align:center;padding:30px">کاربری پیدا نشد.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

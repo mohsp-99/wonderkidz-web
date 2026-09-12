@@ -1,0 +1,32 @@
+<div class="stat-row">
+  <div class="stat">
+    <div class="s-l">آگهی منتشرشده</div>
+    <div class="s-v num">{{ stats.live_count|fa }}</div>
+    <div class="s-d up num">+{{ stats.live_week|fa }} این هفته</div>
+  </div>
+  <div class="stat{% if stats.pending_count %} alert{% endif %}">
+    <div class="s-l">در صف بررسی</div>
+    <div class="s-v num">{{ stats.pending_count|fa }}</div>
+    <div class="s-d num">{% if stats.pending_count %}قدیمی‌ترین: {{ stats.oldest_minutes|fa }} دقیقه پیش · {% endif %}SLA: {{ stats.sla_hours|fa }} ساعت</div>
+  </div>
+  <div class="stat{% if stats.open_reports %} alert{% endif %}">
+    <div class="s-l">گزارش‌های باز</div>
+    <div class="s-v num">{{ stats.open_reports|fa }}</div>
+    <div class="s-d num">{{ stats.urgent_reports|fa }} مورد فوری</div>
+  </div>
+  <div class="stat">
+    <div class="s-l">تماس‌های این هفته</div>
+    <div class="s-v num">{{ stats.contacts_week|fa }}</div>
+    <div class="s-d up">{{ stats.chats_week|fa }} چت + {{ stats.reveals_week|fa }} نمایش شماره</div>
+  </div>
+  <div class="stat">
+    <div class="s-l">کاربر تازه (۷ روز)</div>
+    <div class="s-v num">{{ stats.new_users_week|fa }}</div>
+    <div class="s-d flat">تصمیم‌های امروز: {{ stats.decisions_today|fa }}</div>
+  </div>
+  <div class="stat">
+    <div class="s-l">میانگین زمان تأیید</div>
+    <div class="s-v">{% if stats.avg_minutes is not None %}{{ stats.avg_minutes|fa }} دقیقه{% else %}—{% endif %}</div>
+    <div class="s-d flat">هدف: زیر {{ stats.sla_hours|fa }} ساعت</div>
+  </div>
+</div>

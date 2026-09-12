@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}چت با {{ other.name }} — {{ listing.title }} | {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="chat-layout">
+    {% include "chat/_list.html" %}
+    {% include "chat/_thread.html" %}
+  </div>
+</div>
+{% endblock %}

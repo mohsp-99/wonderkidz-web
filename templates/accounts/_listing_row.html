@@ -1,0 +1,59 @@
+{# one "ml-row" in the profile lists. expects `l` (Listing) #}
+{% with cover=l.cover %}
+<div class="ml-row"{% if l.status == 'rejected' %} style="border-color:#f3d4d1"{% elif l.is_expiring_soon and l.status == 'live' %} style="border-color:var(--amber-200);background:var(--amber-50)"{% elif l.status == 'sold' %} style="opacity:.82"{% endif %}>
+  <div class="ml-thumb"><span class="ph {{ l.ph_class }}{% if cover %} has-img{% endif %}">{% if cover %}<img src="{{ cover.thumb_url }}" alt="">{% else %}<span aria-hidden="true">{{ l.emoji }}</span>{% endif %}</span></div>
+  <div class="ml-body">
+    <div class="ml-title">{{ l.title }}</div>
+    <div class="ml-meta">
+      {% if l.status == 'live' %}<span class="badge badge-live">منتشر شده</span>
+      {% elif l.status == 'pending' %}<span class="badge badge-pending">در انتظار تأیید</span>
+      {% elif l.status == 'rejected' %}<span class="badge badge-sold">رد شد</span>
+      {% elif l.status == 'sold' %}<span class="badge badge-sold">فروخته شد</span>
+      {% elif l.status == 'expired' %}<span class="badge badge-sold">منقضی شد</span>
+      {% elif l.status == 'paused' %}<span class="badge badge-pending">متوقف</span>
+      {% else %}<span class="badge badge-pending">{{ l.get_status_display }}</span>{% endif %}
+      {% if l.price %}<span class="num">{{ l.price|price }} تومان</span>{% endif %}
+      {% if l.status == 'live' or l.status == 'expired' %}
+        <span class="num">{{ l.views_count|fa }} بازدید</span>
+        {% if l.chat_count %}<span class="num">{{ l.chat_count|fa }} چت</span>{% endif %}
+        {% if l.reveals_count %}<span class="num">{{ l.reveals_count|fa }} نمایش شماره</span>{% endif %}
+        {% if l.status == 'live' and l.is_expiring_soon %}<span style="color:var(--amber-700)">{{ l.expires_at|days_left|fa }} روز دیگر منقضی می‌شود</span>{% else %}<span>{{ l.published_at|default:l.created_at|ago }}</span>{% endif %}
+      {% elif l.status == 'rejected' %}
+        <span style="color:var(--red-600)">دلیل: {{ l.reject_reason }}</span>
+        <span>{{ l.reviewed_at|ago }}</span>
+      {% elif l.status == 'pending' %}
+        <span>ثبت شده: {{ l.submitted_at|default:l.created_at|ago }}</span>
+        <span>{{ l.district.name }}</span>
+      {% elif l.status == 'sold' %}
+        <span>{{ l.sold_at|ago }}</span>
+      {% endif %}
+    </div>
+    {% if l.status == 'rejected' and l.reject_note %}<div class="hint" style="margin-top:4px">{{ l.reject_note }}</div>
+    {% elif l.status == 'rejected' %}<div class="hint" style="margin-top:4px">مشکل را برطرف کنید و دوباره برای بررسی بفرستید.</div>{% endif %}
+  </div>
+  <div class="ml-actions">
+    {% if l.status == 'live' %}
+      {% if l.is_expiring_soon %}
+        <form method="post" action="{% url 'listings:renew' l.code %}">{% csrf_token %}<button class="btn btn-action btn-sm" type="submit">تمدید</button></form>
+      {% else %}
+        <a class="btn btn-ghost btn-sm" href="{{ l.get_absolute_url }}">مشاهده</a>
+      {% endif %}
+      <a class="btn btn-ghost btn-sm" href="{% url 'listings:edit' l.code %}">ویرایش</a>
+      <form method="post" action="{% url 'listings:mark_sold' l.code %}">{% csrf_token %}<button class="btn btn-soft btn-sm" type="submit">فروخته شد</button></form>
+    {% elif l.status == 'expired' %}
+      <form method="post" action="{% url 'listings:renew' l.code %}">{% csrf_token %}<button class="btn btn-action btn-sm" type="submit">تمدید</button></form>
+      <a class="btn btn-ghost btn-sm" href="{% url 'listings:edit' l.code %}">ویرایش</a>
+    {% elif l.status == 'pending' or l.status == 'draft' %}
+      <a class="btn btn-ghost btn-sm" href="{% url 'listings:edit' l.code %}">ویرایش</a>
+      <form method="post" action="{% url 'listings:delete' l.code %}" onsubmit="return confirm('این آگهی حذف شود؟')">{% csrf_token %}<button class="btn btn-danger btn-sm" type="submit">حذف</button></form>
+    {% elif l.status == 'rejected' %}
+      <a class="btn btn-primary btn-sm" href="{% url 'listings:edit' l.code %}">اصلاح و ارسال دوباره</a>
+      <form method="post" action="{% url 'listings:delete' l.code %}" onsubmit="return confirm('این آگهی حذف شود؟')">{% csrf_token %}<button class="btn btn-danger btn-sm" type="submit">حذف</button></form>
+    {% elif l.status == 'sold' %}
+      <a class="btn btn-ghost btn-sm" href="{% url 'listings:post' %}?copy={{ l.code }}">ثبت دوبارهٔ مشابه</a>
+    {% else %}
+      <a class="btn btn-ghost btn-sm" href="{% url 'listings:edit' l.code %}">ویرایش</a>
+    {% endif %}
+  </div>
+</div>
+{% endwith %}

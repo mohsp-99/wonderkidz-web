@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}ورود به وندرکیدز{% endblock %}
+{% block header %}{% include "accounts/_auth_header.html" %}{% endblock %}
+{% block footer %}{% include "accounts/_auth_footer.html" %}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div style="width:100%;max-width:400px">
+    <div class="authpane is-on" id="pane-phone">
+      <form class="auth-card" method="post" action="{% url 'accounts:login' %}">
+        {% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <div style="text-align:center;margin-bottom:14px">
+          <span class="logo-mark" style="width:52px;height:52px;font-size:26px;border-radius:16px;display:inline-grid" aria-hidden="true">🧸</span>
+        </div>
+        <h1>ورود یا ثبت‌نام</h1>
+        <p class="sub">با شمارهٔ موبایل وارد شوید. شمارهٔ شما هویت شماست و فقط با کلیک خریدار روی «اطلاعات تماس» نمایش داده می‌شود.</p>
+
+        <div class="field">
+          <label class="label" for="phone-input">شمارهٔ موبایل</label>
+          <input class="input num{% if form.phone.errors %} is-invalid{% endif %}" id="phone-input" name="phone" type="tel" inputmode="tel" dir="ltr" autocomplete="tel"
+                 style="text-align:center;font-size:17px;letter-spacing:1.5px" placeholder="09123456789" value="{{ form.phone.value|default:'' }}" data-phone-input required autofocus>
+          {% if form.phone.errors %}<ul class="errorlist">{% for e in form.phone.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+          <div class="hint">کد تأیید پنج‌رقمی برایتان پیامک می‌شود.</div>
+        </div>
+
+        <button class="btn btn-primary btn-lg btn-block" type="submit">ادامه</button>
+
+        <div class="auth-foot">
+          با ورود، <a href="{% url 'listings:page' 'terms' %}">قوانین</a> و <a href="{% url 'listings:page' 'privacy' %}">حریم خصوصی</a> وندرکیدز را می‌پذیرید.
+        </div>
+      </form>
+
+      <div class="panel panel-pad" style="margin-top:14px;background:transparent;border-style:dashed;box-shadow:none">
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px">چرا فقط شمارهٔ موبایل؟</div>
+        <div class="hint">
+          بدون رمز عبور و بدون ایمیل. شمارهٔ تأییدشده نشان <span class="badge badge-verified">✓ والد تأییدشده</span>
+          را روی آگهی‌های شما می‌آورد و جلوی حساب‌های اسپم را می‌گیرد.
+          <b>گشتن در آگهی‌ها نیازی به ورود ندارد</b> — فقط ثبت آگهی، چت و دیدن شمارهٔ فروشنده.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

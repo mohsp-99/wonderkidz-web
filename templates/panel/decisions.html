@@ -1,0 +1,50 @@
+{% extends "panel/base_panel.html" %}
+{% block panel_title %}تصمیم‌های امروز{% endblock %}
+{% block panel %}
+<div class="panel" style="overflow:hidden;padding:0">
+  <div class="tabs" style="padding:0 8px">
+    <a class="tab" href="{% url 'panel:queue' %}">صف بررسی</a>
+    <a class="tab" href="{% url 'panel:reports' %}">گزارش‌های کاربران</a>
+    <a class="tab is-on" href="{% url 'panel:decisions' %}">تصمیم‌های امروز <span class="cnt num">{{ total_today|fa }}</span></a>
+  </div>
+  <div style="padding:16px;background:#f4f6f8">
+    <div class="panel" style="overflow:hidden;padding:0;overflow-x:auto">
+      <table class="adm-table">
+        <thead><tr><th>آگهی / کاربر</th><th>تصمیم</th><th>دلیل</th><th>اپراتور</th><th>زمان</th></tr></thead>
+        <tbody>
+        {% for d in today_rows %}
+          <tr>
+            <td>{% if d.listing %}<a href="{{ d.listing.get_absolute_url }}" target="_blank" rel="noopener">{{ d.listing_title }}</a>{% else %}{{ d.listing_title|default:d.target_user.name|default:"—" }}{% endif %}</td>
+            <td><span class="badge {% if d.decision == 'approve' or d.decision == 'dismiss' %}badge-live{% elif d.decision == 'warn' %}badge-pending{% else %}badge-sold{% endif %}">{{ d.get_decision_display }}</span></td>
+            <td>{{ d.reason|default:"—" }}</td>
+            <td>{{ d.operator.name|default:"—" }}</td>
+            <td class="num">{{ d.created_at|hm }}</td>
+          </tr>
+        {% empty %}<tr><td colspan="5" class="hint" style="text-align:center;padding:26px">امروز هنوز تصمیمی ثبت نشده.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="hint" style="margin-top:10px">{{ total_today|fa }} تصمیم امروز — {{ approved|fa }} تأیید، {{ rejected|fa }} رد.</div>
+
+    {% if week_rows %}
+    <h3 style="font-size:14px;margin:18px 0 8px">هفت روز گذشته</h3>
+    <div class="panel" style="overflow:hidden;padding:0;overflow-x:auto">
+      <table class="adm-table">
+        <thead><tr><th>آگهی / کاربر</th><th>تصمیم</th><th>دلیل</th><th>اپراتور</th><th>زمان</th></tr></thead>
+        <tbody>
+        {% for d in week_rows %}
+          <tr>
+            <td>{{ d.listing_title|default:d.target_user.name|default:"—" }}</td>
+            <td><span class="badge {% if d.decision == 'approve' or d.decision == 'dismiss' %}badge-live{% elif d.decision == 'warn' %}badge-pending{% else %}badge-sold{% endif %}">{{ d.get_decision_display }}</span></td>
+            <td>{{ d.reason|default:"—" }}</td>
+            <td>{{ d.operator.name|default:"—" }}</td>
+            <td class="num">{{ d.created_at|jalali:"%d %B" }} {{ d.created_at|hm }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

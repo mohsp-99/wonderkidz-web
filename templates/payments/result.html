@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}نتیجهٔ پرداخت | {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div style="width:100%;max-width:440px">
+    <div class="auth-card">
+      <div style="text-align:center;margin-bottom:14px">
+        <span class="logo-mark" style="width:52px;height:52px;font-size:26px;border-radius:16px;display:inline-grid" aria-hidden="true">{% if payment.status == 'paid' %}✅{% elif payment.status == 'canceled' %}↩️{% else %}⛔{% endif %}</span>
+      </div>
+      {% if payment.status == 'paid' %}
+        <h1>پرداخت انجام شد</h1>
+        <p class="sub">«{{ payment.plan.name }}» برای حساب شما فعال شد.{% if payment.listing %} آگهی «{{ payment.listing.title }}» به‌روزرسانی شد.{% endif %}</p>
+      {% elif payment.status == 'canceled' %}
+        <h1>پرداخت لغو شد</h1>
+        <p class="sub">مبلغی از حساب شما برداشت نشده است.</p>
+      {% elif payment.status == 'pending' %}
+        <h1>در انتظار پرداخت</h1>
+        <p class="sub">این تراکنش هنوز نهایی نشده است.</p>
+      {% else %}
+        <h1>پرداخت ناموفق بود</h1>
+        <p class="sub">اگر مبلغی کسر شده باشد، طبق قوانین بانک تا ۷۲ ساعت به حساب شما برمی‌گردد.</p>
+      {% endif %}
+
+      <table class="attr-table" style="margin-bottom:14px">
+        <tbody>
+          <tr><th>خدمت</th><td>{{ payment.plan.name }}</td></tr>
+          <tr><th>مبلغ</th><td class="num">{{ payment.amount|price }} تومان</td></tr>
+          <tr><th>وضعیت</th><td>{{ payment.get_status_display }}</td></tr>
+          {% if payment.ref_id %}<tr><th>کد پیگیری</th><td class="num" dir="ltr">{{ payment.ref_id }}</td></tr>{% endif %}
+          <tr><th>درگاه</th><td>{{ payment.gateway }}</td></tr>
+        </tbody>
+      </table>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        {% if payment.listing %}<a class="btn btn-primary" style="flex:1" href="{{ payment.listing.get_absolute_url }}">دیدن آگهی</a>{% endif %}
+        <a class="btn btn-ghost" style="flex:1" href="{% url 'accounts:profile' %}">آگهی‌های من</a>
+        {% if payment.status != 'paid' %}<a class="btn btn-soft" style="flex:1" href="{% url 'payments:plans' %}">تلاش دوباره</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+<aside class="chat-list">
+  <div class="chat-list-head">
+    <h2>چت‌های من</h2>
+    <div class="hint" style="margin-top:2px">{{ items|length|fa }} گفت‌وگو · {{ unread_total|fa }} پیام خوانده‌نشده</div>
+  </div>
+  <div class="chat-items">
+    {% for it in items %}
+    <a class="ci{% if conv and conv.pk == it.conv.pk %} is-on{% endif %}" href="{{ it.conv.get_absolute_url }}">
+      <div class="ci-thumb">
+        {% with cover=it.conv.listing.cover %}
+        <span class="ph {{ it.conv.listing.ph_class }}{% if cover %} has-img{% endif %}">
+          {% if cover %}<img src="{{ cover.thumb_url }}" alt="">{% else %}<span aria-hidden="true">{{ it.conv.listing.emoji }}</span>{% endif %}
+        </span>
+        {% endwith %}
+      </div>
+      <div class="ci-body">
+        <div class="ci-top"><span class="ci-name">{{ it.other.name }}</span><span class="ci-time">{% if it.last %}{{ it.last.created_at|chat_time }}{% endif %}</span></div>
+        <div class="ci-sub">{{ it.conv.listing.title }}</div>
+        <div class="ci-last">{% if it.last %}{% if it.last_is_mine %}شما: {% endif %}{{ it.last.body|truncatechars:60 }}{% endif %}</div>
+      </div>
+      {% if it.unread %}<span class="ci-unread num">{{ it.unread|fa }}</span>{% endif %}
+    </a>
+    {% endfor %}
+    <div class="empty" style="padding:26px 16px">
+      <span class="e-icon" aria-hidden="true">💬</span>
+      گفت‌وگوهای شما اینجا می‌ماند.<br>
+      <span class="hint">پیام‌ها برای بررسی گزارش‌ها تا ۶ ماه نگهداری می‌شوند.</span>
+    </div>
+  </div>
+</aside>

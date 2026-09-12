@@ -1,0 +1,10 @@
+Django>=5.1,<5.2
+Pillow>=10.4
+jdatetime>=5.0
+python-dotenv>=1.0
+dj-database-url>=2.2
+whitenoise>=6.7
+gunicorn>=23.0
+requests>=2.32
+psycopg[binary]>=3.2
+django-storages[s3]>=1.14

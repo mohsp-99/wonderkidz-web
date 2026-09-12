@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}چت‌های من | {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="chat-layout">
+    {% include "chat/_list.html" %}
+    <section class="chat-thread" style="align-items:center;justify-content:center">
+      <div class="empty" style="padding:40px 20px">
+        <span class="e-icon" aria-hidden="true">💬</span>
+        {% if items %}یک گفت‌وگو را از فهرست انتخاب کنید.{% else %}هنوز گفت‌وگویی ندارید.<br><span class="hint">از صفحهٔ هر آگهی روی «چت» بزنید تا با فروشنده صحبت کنید.</span>{% endif %}
+        <div style="margin-top:14px"><a class="btn btn-ghost btn-sm" href="{% url 'listings:search' %}">گشتن در آگهی‌ها</a></div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
