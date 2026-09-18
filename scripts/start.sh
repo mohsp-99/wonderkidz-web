@@ -5,6 +5,8 @@
 #   SEED_DEMO_ON_START   "true" = run seed_demo when the listings table is empty (demo hosts with ephemeral disks)
 set -e
 cd "$(dirname "$0")/.."
+# Platforms that run the container as an arbitrary UID give it HOME=/ (unwritable); gunicorn wants ~/.gunicorn.
+[ -w "${HOME:-/}" ] || export HOME=/tmp
 
 python manage.py migrate --noinput
 

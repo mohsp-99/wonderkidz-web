@@ -24,18 +24,50 @@ jobs:
       - run: python manage.py makemigrations --check --dry-run
       - run: python manage.py test --noinput
 
+  # Builds the production image and publishes it to GitHub Container Registry on every push to main:
+  #   ghcr.io/<owner>/wonderkidz-web:latest and :sha-<short sha>
+  # The container host (ArvanCloud Cloud Container, see docs/deployment.md) pulls from there.
+  # Optional: if DOCKERHUB_USERNAME / DOCKERHUB_TOKEN secrets exist, the same tags are pushed to Docker Hub too.
   docker:
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/wonderkidz-web
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
-      - name: Build image
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to Docker Hub (optional)
+        if: env.DOCKERHUB_USERNAME != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Compute tags
+        id: tags
+        run: |
+          short=${GITHUB_SHA::7}
+          tags="${IMAGE}:latest,${IMAGE}:sha-${short}"
+          if [ -n "${DOCKERHUB_USERNAME}" ]; then
+            tags="$tags,docker.io/${DOCKERHUB_USERNAME}/wonderkidz-web:latest,docker.io/${DOCKERHUB_USERNAME}/wonderkidz-web:sha-${short}"
+          fi
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
+      - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: false
-          tags: wonderkidz-web:${{ github.sha }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

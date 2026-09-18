@@ -90,9 +90,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+# DATA_DIR: one writable directory for everything that must survive a restart when there is no external
+# database/object storage (a mounted disk on a container host). Holds the SQLite file and MEDIA_ROOT.
+DATA_DIR = Path(env("DATA_DIR")) if env("DATA_DIR") else None
+if DATA_DIR:
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+    except PermissionError:
+        pass  # a mounted disk normally exists already; if it is unwritable, migrate fails with a clear error
+
 DATABASES = {
     "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}", conn_max_age=60
+        default=f"sqlite:///{(DATA_DIR or BASE_DIR) / 'db.sqlite3'}", conn_max_age=60
     )
 }
 
@@ -127,7 +136,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = (DATA_DIR / "media") if DATA_DIR else (BASE_DIR / "media")
 mimetypes.add_type("image/webp", ".webp")  # python:3.12-slim lacks it; matters when Django serves media itself
 # Serve MEDIA_ROOT from Django itself. On by default in DEBUG; set SERVE_MEDIA=true on a demo host that has no
 # object storage or front web server. Not for real production traffic.

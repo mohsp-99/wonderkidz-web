@@ -71,6 +71,7 @@ All settings are read from the environment (or `.env`) in `config/settings.py`. 
 | `MODERATION_MODEL` | optional | `ai_first` (default), `pre_approval`, `post_review` — see [moderation.md](moderation.md) |
 | `LISTING_TTL_DAYS`, `NEW_ACCOUNT_LISTING_CAP` | optional | defaults 30 and 5 |
 | `LOG_LEVEL` | optional | default `INFO`, plain-text to stdout |
+| `DATA_DIR` | optional | a writable directory (mounted disk) holding `db.sqlite3` and `media/` when there is no Postgres/S3; defaults to the project directory |
 | `SERVE_MEDIA` | demo only | defaults to `DEBUG`; `true` makes Django serve `MEDIA_ROOT` at `/media/` when there is no object storage or front web server |
 | `SEED_DEMO_ON_START` | demo only | `true` makes `scripts/start.sh` run `seed_demo` when the listings table is empty |
 | `PORT`, `WEB_CONCURRENCY` | optional | read by `scripts/start.sh` (default 8000 and 3 gunicorn workers); platforms like Render set `PORT` |
@@ -104,24 +105,60 @@ The service worker (`/sw.js`) only registers on `https:`; installability and the
 
 Pushing to a registry and deploying is intentionally left out until a hosting account exists; add a `docker/login-action` + `push: true` step and the provider's deploy hook when it does. Because `ruff` runs in CI with `E,F,W,I` (E501 ignored), unformatted imports fail the build.
 
-## Free demo deployment (Render)
+## Published image
 
-For showing the product to stakeholders without real SMS, payments or a database server. `render.yaml` at the repo root is a Render Blueprint that deploys the Docker image on the free plan with demo settings:
+CI (`.github/workflows/ci.yml`, job `docker`) builds the production image on every push to `main` and publishes it to GitHub Container Registry:
 
-| Setting | Value | Effect |
+```
+ghcr.io/mohsp-99/wonderkidz-web:latest
+ghcr.io/mohsp-99/wonderkidz-web:sha-<short sha>
+```
+
+The package is public, so any container host can pull it without credentials. If a host cannot reach `ghcr.io`, add `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` as repository secrets and the same job also pushes `docker.io/<username>/wonderkidz-web` with the same tags. Nothing in the image is environment-specific; all configuration is environment variables.
+
+## Demo settings (no real SMS, payments or database server)
+
+Used by every demo deployment below. Never reuse them on a real deployment: `OTP_DEV_CODE` must be empty there.
+
+| Variable | Value | Effect |
 |---|---|---|
+| `DEBUG` | `false` | production behaviour (manifest static files, secure cookies, HSTS) |
+| `SECRET_KEY` | long random string | required with `DEBUG=false` |
+| `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` / `SITE_URL` | the host's public hostname (`host`, `https://host`, `https://host`) | otherwise every request is refused / POSTs fail CSRF |
 | `OTP_DEV_CODE` | `12345` | any phone number logs in with this code; the verify page shows a hint saying so |
 | `SMS_BACKEND` | `console` | no SMS is sent |
 | `PAYMENT_GATEWAY` | `fake` | promotions "succeed" on a local page |
 | `SERVE_MEDIA` | `true` | Django serves uploaded images itself |
-| `SEED_DEMO_ON_START` | `true` | demo categories, users and listings are created on first start |
-| `ALLOWED_HOSTS` | `.onrender.com` | any Render hostname works; `SITE_URL` is derived from `RENDER_EXTERNAL_HOSTNAME` |
+| `SEED_DEMO_ON_START` | `true` | demo categories, users and listings are created when the listings table is empty |
+| `DATA_DIR` | mount path of a persistent disk, e.g. `/data` | SQLite file and uploads live there and survive restarts; omit for an ephemeral demo |
+| `WEB_CONCURRENCY` | `2` | gunicorn workers; 2 fits a 512 MB container |
+
+Demo logins: any phone + `12345`; operator `09120000000` (panel `/panel/`, admin `/admin/` password `admin`).
+
+## Deploying on ArvanCloud Cloud Container
+
+ArvanCloud's Cloud Container (PaaS) runs the published image directly; it is reachable from Iran, bills by the hour in rial and needs no foreign card. Panel path:
+
+1. **Container registry access.** In the panel go to *Cloud Container → Create app → Container image*. Image address: `ghcr.io/mohsp-99/wonderkidz-web:latest` (public, no username/password; leave "private image" off). If the pull fails, use the Docker Hub copy described under "Published image".
+2. **Resources.** 0.5 CPU / 512 MB RAM is enough for a demo; one replica. Port `8000`, protocol HTTP.
+3. **Disk (optional but recommended).** Add a disk of 1–2 GB mounted at `/data` and set `DATA_DIR=/data`. Without it, listings and images created by viewers vanish on every restart or redeploy (the demo content is reseeded).
+4. **Environment variables.** Enter the table above. For the hostname, first create the app with a placeholder, read the default domain the panel assigns (`<app>-<project>.apps.<region>.arvan.run`), then set `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` and `SITE_URL` to it and redeploy. Or attach your own domain under *Domains* and use that.
+5. **Health check** (if the panel asks): HTTP GET `/robots.txt` on port 8000.
+6. **Deploy.** First start runs migrations and `seed_demo` (about a minute, it generates ~40 WebP images), then gunicorn. Open the app URL; check the app logs in the panel if it does not come up — the first lines are `[start] …`.
+
+Updating: push to `main` → CI publishes a new `:latest` and `:sha-…` → in the panel click *Redeploy* (pull policy is "always") or change the tag to the new `sha-…` for an explicit rollout/rollback.
+
+## Free demo deployment (Render)
+
+Alternative when a foreign card is available (Render now asks for one at sign-up). `render.yaml` at the repo root is a Render Blueprint that deploys the Docker image on the free plan with the demo settings above (ephemeral disk, no `DATA_DIR`):
+
+`ALLOWED_HOSTS` is `.onrender.com` so any Render hostname works, and `SITE_URL` is derived from `RENDER_EXTERNAL_HOSTNAME`.
 
 Steps: push the repo to GitHub → Render dashboard → **New → Blueprint** → pick the repo → **Apply**. The first build takes a few minutes; the app is then at `https://<service-name>.onrender.com`. Operator login: phone `09120000000`, code `12345`, panel at `/panel/`, admin at `/admin/` (password `admin`).
 
 Limits of the free plan, all acceptable for a demo: the instance sleeps after 15 minutes without traffic and the first request afterwards takes 30–60 s; the disk is ephemeral, so SQLite and uploaded images reset on every deploy or wake-up and the demo content is reseeded. Listings created by a viewer therefore survive only within one active session. For persistence, attach a persistent disk at `/app/media` and `/app` (paid) or point `DATABASE_URL` at a Render Postgres instance (free for 30 days) — images would still need object storage. Never reuse these demo values on a real deployment: `OTP_DEV_CODE` must be empty there.
 
-Any other Docker-capable free host (Koyeb, Fly.io, Liara's free tier) works with the same image and the same environment variables; only the blueprint file is Render-specific.
+Any other Docker-capable host works with the same image and the same environment variables; only the blueprint file is Render-specific.
 
 ## First-deploy checklist
 

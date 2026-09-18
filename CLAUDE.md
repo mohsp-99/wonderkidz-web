@@ -18,7 +18,7 @@ scripts/wk seed --flush # reset demo data
 scripts/wk manage <cmd> # any manage.py command
 ```
 
-Container entrypoint is `scripts/start.sh` (migrate → optional `seed_demo` via `SEED_DEMO_ON_START` → gunicorn on `$PORT`). `render.yaml` is a free demo deployment on Render with `OTP_DEV_CODE=12345`, console SMS and the fake gateway; see `docs/deployment.md` → "Free demo deployment".
+Container entrypoint is `scripts/start.sh` (migrate → optional `seed_demo` via `SEED_DEMO_ON_START` → gunicorn on `$PORT`). CI publishes the image to `ghcr.io/mohsp-99/wonderkidz-web:latest` on every push to `main`; the stakeholder demo runs that image on ArvanCloud Cloud Container with `OTP_DEV_CODE=12345`, console SMS, the fake gateway and `DATA_DIR=/data` on a mounted disk (`render.yaml` is the same demo for Render). See `docs/deployment.md` → "Deploying on ArvanCloud".
 
 Login in dev: any phone, OTP `12345` (`OTP_DEV_CODE` in `.env`). Operator: `09120000000` (admin password `admin`, panel at `/panel/`).
 

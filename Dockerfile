@@ -17,7 +17,11 @@ COPY . .
 # Static assets are baked into the image (served by WhiteNoise); a dummy key is enough for collectstatic.
 RUN SECRET_KEY=build DEBUG=false python manage.py collectstatic --noinput
 
-RUN chmod +x scripts/start.sh && useradd -m app && chown -R app:app /app
+# /data is the conventional mount point for DATA_DIR (SQLite + uploads on a persistent disk). Pre-creating it
+# owned by `app` makes an empty Docker named volume inherit that ownership. Group 0 + g+w keep /app and /data
+# writable when the platform runs the container as an arbitrary UID (OpenShift-style, e.g. ArvanCloud).
+RUN chmod +x scripts/start.sh && useradd -m app \
+    && mkdir -p /data && chown -R app:0 /app /data && chmod -R g+w /app /data
 USER app
 
 EXPOSE 8000
