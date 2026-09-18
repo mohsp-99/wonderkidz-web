@@ -8,3 +8,4 @@ staticfiles/
 __pycache__/
 *.pyc
 .run/
+docker-compose.override.yml

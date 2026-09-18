@@ -37,6 +37,19 @@ class OTPLoginTests(TestCase):
         self.assertContains(r, "شمارهٔ موبایل معتبر نیست")
         self.assertFalse(OTPCode.objects.exists())
 
+    @override_settings(OTP_DEV_CODE="12345")
+    def test_verify_page_shows_demo_code_hint_when_dev_code_set(self):
+        self._request_code()
+        r = self.client.get(reverse("accounts:verify"))
+        self.assertContains(r, 'id="demo-otp-hint"')
+        self.assertContains(r, "۱۲۳۴۵")
+
+    @override_settings(OTP_DEV_CODE="")
+    def test_verify_page_hides_demo_hint_without_dev_code(self):
+        self._request_code()
+        r = self.client.get(reverse("accounts:verify"))
+        self.assertNotContains(r, 'id="demo-otp-hint"')
+
     def test_verify_without_session_redirects(self):
         r = self.client.get(reverse("accounts:verify"))
         self.assertRedirects(r, reverse("accounts:login"))

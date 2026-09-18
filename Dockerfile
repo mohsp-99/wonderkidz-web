@@ -17,10 +17,11 @@ COPY . .
 # Static assets are baked into the image (served by WhiteNoise); a dummy key is enough for collectstatic.
 RUN SECRET_KEY=build DEBUG=false python manage.py collectstatic --noinput
 
-RUN useradd -m app && chown -R app:app /app
+RUN chmod +x scripts/start.sh && useradd -m app && chown -R app:app /app
 USER app
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s CMD curl -fs http://localhost:8000/robots.txt || exit 1
 
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "60"]
+# Migrates, optionally seeds demo data (SEED_DEMO_ON_START=true), then starts gunicorn on $PORT (default 8000).
+CMD ["scripts/start.sh"]

@@ -115,7 +115,7 @@ Uploads are resized to WebP before storage ([architecture.md](architecture.md) �
 
 ## Cache and Redis
 
-`REDIS_URL` set → `django.core.cache.backends.redis.RedisCache`; otherwise `LocMemCache`. The cache holds OTP rate counters, the console backend's last code, and phone-reveal counters. Redis is recommended in production as soon as there is more than one worker (locmem counters are per process). django-rq / background jobs are **not** wired in v1; image processing is synchronous and expiry runs from cron ([operations.md](operations.md)).
+`REDIS_URL` set → `django.core.cache.backends.redis.RedisCache` (needs the `redis` package, which is in `requirements.txt`; the `core.E001` system check fails `migrate`/`check` if it is missing, because Django only imports it on the first cache call and that call is the OTP rate limit in the login view); otherwise `LocMemCache`. The cache holds OTP rate counters, the console backend's last code, and phone-reveal counters. Redis is recommended in production as soon as there is more than one worker (locmem counters are per process). django-rq / background jobs are **not** wired in v1; image processing is synchronous and expiry runs from cron ([operations.md](operations.md)).
 
 ## Accounts to open (phase 0 checklist)
 

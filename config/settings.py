@@ -5,6 +5,7 @@ Everything environment-specific comes from env vars (see .env.example).
 Defaults are chosen so `manage.py migrate && manage.py seed_demo && manage.py runserver`
 works out of the box on SQLite with console OTP and a fake payment gateway.
 """
+import mimetypes
 import os
 from pathlib import Path
 
@@ -32,7 +33,9 @@ SECRET_KEY = env("SECRET_KEY", "dev-insecure-change-me")
 DEBUG = env("DEBUG", True, bool)
 ALLOWED_HOSTS = env("ALLOWED_HOSTS", ["*"] if DEBUG else [], list)
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS", [], list)
-SITE_URL = env("SITE_URL", "http://localhost:8000")
+# Platform convenience: Render sets RENDER_EXTERNAL_HOSTNAME on every service; use it for SITE_URL when unset.
+_platform_host = env("RENDER_EXTERNAL_HOSTNAME")
+SITE_URL = env("SITE_URL", f"https://{_platform_host}" if _platform_host else "http://localhost:8000")
 SITE_NAME = "وندرکیدز"
 
 INSTALLED_APPS = [
@@ -125,6 +128,10 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+mimetypes.add_type("image/webp", ".webp")  # python:3.12-slim lacks it; matters when Django serves media itself
+# Serve MEDIA_ROOT from Django itself. On by default in DEBUG; set SERVE_MEDIA=true on a demo host that has no
+# object storage or front web server. Not for real production traffic.
+SERVE_MEDIA = env("SERVE_MEDIA", DEBUG, bool)
 
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},

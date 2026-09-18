@@ -1,0 +1,29 @@
+# Render Blueprint — free demo deployment (docs/deployment.md → "Free demo deployment").
+# Data lives on the instance's ephemeral disk: it resets on every deploy/restart and the demo content is reseeded.
+services:
+  - type: web
+    name: wonderkidz-demo
+    runtime: docker
+    plan: free
+    healthCheckPath: /robots.txt
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "false"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://*.onrender.com"
+      - key: SERVE_MEDIA
+        value: "true"
+      - key: SEED_DEMO_ON_START
+        value: "true"
+      - key: SMS_BACKEND
+        value: console
+      - key: OTP_DEV_CODE
+        value: "12345"
+      - key: PAYMENT_GATEWAY
+        value: fake
+      - key: WEB_CONCURRENCY
+        value: "2"

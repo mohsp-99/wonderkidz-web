@@ -93,3 +93,40 @@ class TemplateFilterTests(TestCase):
         out = self.render("{% qs_replace cond='' sort='cheapest' %}", request=req)
         self.assertNotIn("cond=", out)
         self.assertIn("sort=cheapest", out)
+
+
+class SystemChecksTests(SimpleTestCase):
+    def test_redis_check_silent_without_redis_url(self):
+        from django.test import override_settings
+
+        from apps.core.checks import redis_client_installed
+
+        with override_settings(REDIS_URL=""):
+            self.assertEqual(redis_client_installed(None), [])
+
+    def test_redis_check_errors_when_package_missing(self):
+        import builtins
+        from unittest import mock
+
+        from django.test import override_settings
+
+        from apps.core.checks import redis_client_installed
+
+        real_import = builtins.__import__
+
+        def fake_import(name, *args, **kwargs):
+            if name == "redis":
+                raise ImportError("no redis")
+            return real_import(name, *args, **kwargs)
+
+        with override_settings(REDIS_URL="redis://localhost:6379/0"), mock.patch("builtins.__import__", fake_import):
+            errors = redis_client_installed(None)
+        self.assertEqual([e.id for e in errors], ["core.E001"])
+
+    def test_redis_check_passes_when_package_installed(self):
+        from django.test import override_settings
+
+        from apps.core.checks import redis_client_installed
+
+        with override_settings(REDIS_URL="redis://localhost:6379/0"):
+            self.assertEqual(redis_client_installed(None), [])

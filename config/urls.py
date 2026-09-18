@@ -1,9 +1,9 @@
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
-from django.urls import include, path
+from django.urls import include, path, re_path
 from django.views.generic import TemplateView
+from django.views.static import serve
 
 from apps.listings.sitemaps import CategorySitemap, ListingSitemap, StaticSitemap
 
@@ -30,8 +30,8 @@ urlpatterns = [
     path("", include("apps.listings.urls")),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.SERVE_MEDIA:
+    urlpatterns += [re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT})]
 
 admin.site.site_header = "وندرکیدز — مدیریت"
 admin.site.site_title = "وندرکیدز"

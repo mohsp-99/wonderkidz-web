@@ -18,6 +18,8 @@ scripts/wk seed --flush # reset demo data
 scripts/wk manage <cmd> # any manage.py command
 ```
 
+Container entrypoint is `scripts/start.sh` (migrate → optional `seed_demo` via `SEED_DEMO_ON_START` → gunicorn on `$PORT`). `render.yaml` is a free demo deployment on Render with `OTP_DEV_CODE=12345`, console SMS and the fake gateway; see `docs/deployment.md` → "Free demo deployment".
+
 Login in dev: any phone, OTP `12345` (`OTP_DEV_CODE` in `.env`). Operator: `09120000000` (admin password `admin`, panel at `/panel/`).
 
 ## Conventions that matter
@@ -29,7 +31,7 @@ Login in dev: any phone, OTP `12345` (`OTP_DEV_CODE` in `.env`). Operator: `0912
 - **HTMX endpoints** return fragments when `request.htmx` is true and a full page/redirect otherwise; keep both paths working (progressive enhancement). CSRF header is injected globally in `base.html`.
 - **Search** reads `Listing.search_text` (normalized in `apps/core/text.py`); if you add searchable fields, update `Listing.refresh_search_text`.
 - **Images** always go through `apps/core/images.py` (WebP gallery + thumb). Never store originals.
-- Python 3.10-compatible syntax (the local venv is 3.10, Docker is 3.12). Ruff config in `pyproject.toml`; CI fails on lint, on un-generated migrations, and on tests.
+- Python 3.10-compatible syntax (Docker and CI are 3.12; the local venv may be newer). Ruff config in `pyproject.toml`; CI fails on lint, on un-generated migrations, and on tests.
 
 ## Before you change things
 
@@ -46,6 +48,8 @@ Login in dev: any phone, OTP `12345` (`OTP_DEV_CODE` in `.env`). Operator: `0912
 - No `jq`, no `unzip`; use Python. `sudo` needs an interactive password.
 - Headless Chrome is available (`google-chrome --headless=new --screenshot=...`) but has no color-emoji font, so emoji render as boxes in screenshots only.
 - When automating with shell tools, avoid `pkill -f <pattern>` — it can match the wrapper shell. Use `scripts/wk stop`.
+- The local `.venv` is Python 3.14, where Django 5.1's test client breaks (`'super' object has no attribute 'dicts'` in template `Context.__copy__`), so ~80 tests error there. Run the suite in Docker instead: `docker compose run --rm web python manage.py test`. Ruff, `check` and `makemigrations --check` work fine in the venv.
+- `docker-compose.override.yml` (ignored by git) remaps the app to port 8001 and sets `DEBUG=true`, because port 8000 is held by another project's container.
 
 ## Map
 

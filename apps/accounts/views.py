@@ -104,7 +104,12 @@ def verify_view(request):
     return render(
         request,
         "accounts/verify.html",
-        {"form": form, "phone": phone, "OTP_TTL_SECONDS": settings.OTP_TTL_SECONDS},
+        {
+            "form": form,
+            "phone": phone,
+            "OTP_TTL_SECONDS": settings.OTP_TTL_SECONDS,
+            "dev_code": settings.OTP_DEV_CODE,  # demo/dev only; empty in production
+        },
     )
 
 

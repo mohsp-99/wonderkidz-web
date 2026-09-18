@@ -23,7 +23,7 @@ The application is one deployable unit: one image, one database, no separate API
 3. Copies the source, then runs `collectstatic` at **build time** with a throwaway `SECRET_KEY=build DEBUG=false`. Static files (the mockup CSS, the vendored htmx/Alpine, the Vazirmatn font) are baked into the image under `staticfiles/` and served by WhiteNoise with compressed, hashed filenames.
 4. Switches to an unprivileged `app` user.
 5. Declares a healthcheck on `/robots.txt` every 30 s.
-6. Default command: `gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60`.
+6. Default command: `scripts/start.sh` — runs `migrate`, optionally `seed_demo` (`SEED_DEMO_ON_START=true`), then `gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers $WEB_CONCURRENCY --timeout 60`.
 
 `.dockerignore` keeps `.venv`, `.git`, `.env`, `db.sqlite3`, `media/`, `staticfiles/` and caches out of the build context. The image therefore contains no secrets and no user uploads.
 
@@ -71,6 +71,9 @@ All settings are read from the environment (or `.env`) in `config/settings.py`. 
 | `MODERATION_MODEL` | optional | `ai_first` (default), `pre_approval`, `post_review` — see [moderation.md](moderation.md) |
 | `LISTING_TTL_DAYS`, `NEW_ACCOUNT_LISTING_CAP` | optional | defaults 30 and 5 |
 | `LOG_LEVEL` | optional | default `INFO`, plain-text to stdout |
+| `SERVE_MEDIA` | demo only | defaults to `DEBUG`; `true` makes Django serve `MEDIA_ROOT` at `/media/` when there is no object storage or front web server |
+| `SEED_DEMO_ON_START` | demo only | `true` makes `scripts/start.sh` run `seed_demo` when the listings table is empty |
+| `PORT`, `WEB_CONCURRENCY` | optional | read by `scripts/start.sh` (default 8000 and 3 gunicorn workers); platforms like Render set `PORT` |
 
 `.env.example` lists every variable with a comment.
 
@@ -100,6 +103,25 @@ The service worker (`/sw.js`) only registers on `https:`; installability and the
 | `docker` (only on push to `main`, after `test`) | builds the image with Buildx and GitHub Actions cache, tagged `wonderkidz-web:<sha>`, **not pushed** |
 
 Pushing to a registry and deploying is intentionally left out until a hosting account exists; add a `docker/login-action` + `push: true` step and the provider's deploy hook when it does. Because `ruff` runs in CI with `E,F,W,I` (E501 ignored), unformatted imports fail the build.
+
+## Free demo deployment (Render)
+
+For showing the product to stakeholders without real SMS, payments or a database server. `render.yaml` at the repo root is a Render Blueprint that deploys the Docker image on the free plan with demo settings:
+
+| Setting | Value | Effect |
+|---|---|---|
+| `OTP_DEV_CODE` | `12345` | any phone number logs in with this code; the verify page shows a hint saying so |
+| `SMS_BACKEND` | `console` | no SMS is sent |
+| `PAYMENT_GATEWAY` | `fake` | promotions "succeed" on a local page |
+| `SERVE_MEDIA` | `true` | Django serves uploaded images itself |
+| `SEED_DEMO_ON_START` | `true` | demo categories, users and listings are created on first start |
+| `ALLOWED_HOSTS` | `.onrender.com` | any Render hostname works; `SITE_URL` is derived from `RENDER_EXTERNAL_HOSTNAME` |
+
+Steps: push the repo to GitHub → Render dashboard → **New → Blueprint** → pick the repo → **Apply**. The first build takes a few minutes; the app is then at `https://<service-name>.onrender.com`. Operator login: phone `09120000000`, code `12345`, panel at `/panel/`, admin at `/admin/` (password `admin`).
+
+Limits of the free plan, all acceptable for a demo: the instance sleeps after 15 minutes without traffic and the first request afterwards takes 30–60 s; the disk is ephemeral, so SQLite and uploaded images reset on every deploy or wake-up and the demo content is reseeded. Listings created by a viewer therefore survive only within one active session. For persistence, attach a persistent disk at `/app/media` and `/app` (paid) or point `DATABASE_URL` at a Render Postgres instance (free for 30 days) — images would still need object storage. Never reuse these demo values on a real deployment: `OTP_DEV_CODE` must be empty there.
+
+Any other Docker-capable free host (Koyeb, Fly.io, Liara's free tier) works with the same image and the same environment variables; only the blueprint file is Render-specific.
 
 ## First-deploy checklist
 

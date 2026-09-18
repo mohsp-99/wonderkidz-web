@@ -16,6 +16,11 @@
           کد پنج‌رقمی به شمارهٔ <b class="num" id="phone-echo" dir="ltr">{{ phone|phone }}</b> پیامک شد.
           <a href="{% url 'accounts:login' %}" style="color:var(--teal-700)">تغییر شماره</a>
         </p>
+        {% if dev_code %}
+        <div class="hint" id="demo-otp-hint" style="text-align:center;background:var(--amber-100);border-radius:10px;padding:8px 10px;margin-bottom:12px">
+          نسخهٔ نمایشی: پیامک واقعی ارسال نمی‌شود. کد <b class="num" dir="ltr">{{ dev_code|fa }}</b> را وارد کنید.
+        </div>
+        {% endif %}
 
         <div class="otp-inputs" dir="ltr">
           <input id="otp-1" class="num" inputmode="numeric" maxlength="1" aria-label="رقم ۱" autocomplete="one-time-code">
